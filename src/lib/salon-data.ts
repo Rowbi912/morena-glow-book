@@ -1,18 +1,32 @@
-export type Service = { name: string; price: number; duration: number };
+export type Role = "stylist" | "colorist" | "nail";
+
+export type Service = {
+  name: string;
+  price: number;
+  duration: number; // total client time in minutes (display)
+  role: Role;
+  // For color services: split between active application and passive processing.
+  // If not provided, applicationMinutes = duration, processingMinutes = 0.
+  applicationMinutes?: number;
+  processingMinutes?: number;
+};
+
 export type ServiceCategory = { id: string; name: string; icon: string; services: Service[] };
 
+// Prices already multiplied by 2.5 (150% increase over previous mock prices).
 export const SERVICE_CATEGORIES: ServiceCategory[] = [
   {
     id: "lavados",
     name: "Lavados y tratamientos",
     icon: "Droplets",
     services: [
-      { name: "Neutro / Alcalino", price: 8500, duration: 45 },
-      { name: "Baño de crema Kerastase", price: 14000, duration: 60 },
-      { name: "Ritual Morena (con peinado)", price: 22000, duration: 90 },
-      { name: "Alisado progresivo", price: 65000, duration: 180 },
-      { name: "Botox Capilar", price: 48000, duration: 120 },
-      { name: "Morena Keratin Shock", price: 55000, duration: 150 },
+      { name: "Lavado Neutro / Alcalino", price: 4500, duration: 15, role: "stylist" },
+      { name: "Lavado Loreal / Wella SP", price: 6000, duration: 20, role: "stylist" },
+      { name: "Baño de crema Kerastase", price: 18500, duration: 45, role: "stylist" },
+      { name: "Ritual Morena (con peinado)", price: 38500, duration: 60, role: "stylist" },
+      { name: "Alisado progresivo", price: 162500, duration: 180, role: "stylist" },
+      { name: "Botox Capilar", price: 120000, duration: 90, role: "stylist" },
+      { name: "Morena Keratin Shock", price: 137500, duration: 90, role: "stylist" },
     ],
   },
   {
@@ -20,10 +34,10 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
     name: "Cortes",
     icon: "Scissors",
     services: [
-      { name: "Damas", price: 12000, duration: 45 },
-      { name: "Caballeros", price: 8500, duration: 30 },
-      { name: "Niños", price: 7000, duration: 30 },
-      { name: "Flequillo", price: 4500, duration: 15 },
+      { name: "Corte Damas", price: 21000, duration: 45, role: "stylist" },
+      { name: "Corte Caballeros", price: 15000, duration: 30, role: "stylist" },
+      { name: "Corte Niños", price: 12500, duration: 20, role: "stylist" },
+      { name: "Flequillo", price: 8000, duration: 15, role: "stylist" },
     ],
   },
   {
@@ -31,10 +45,10 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
     name: "Peinados",
     icon: "Wind",
     services: [
-      { name: "Brushing Premium", price: 11000, duration: 45 },
-      { name: "Ondas", price: 13500, duration: 60 },
-      { name: "Recogido", price: 18000, duration: 75 },
-      { name: "Medio Recogido", price: 15500, duration: 60 },
+      { name: "Brushing Premium", price: 19500, duration: 40, role: "stylist" },
+      { name: "Ondas", price: 24000, duration: 50, role: "stylist" },
+      { name: "Recogido", price: 32000, duration: 60, role: "stylist" },
+      { name: "Medio Recogido", price: 27500, duration: 60, role: "stylist" },
     ],
   },
   {
@@ -42,11 +56,10 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
     name: "Coloración",
     icon: "Palette",
     services: [
-      { name: "Color", price: 24000, duration: 90 },
-      { name: "Reflejos con papel", price: 32000, duration: 120 },
-      { name: "Mechas Platinum", price: 45000, duration: 150 },
-      { name: "Cambio total de color", price: 52000, duration: 180 },
-      { name: "Color Inoa", price: 30000, duration: 90 },
+      { name: "Color completo", price: 42500, duration: 90, role: "colorist", applicationMinutes: 30, processingMinutes: 60 },
+      { name: "Reflejos con papel", price: 57000, duration: 120, role: "colorist", applicationMinutes: 30, processingMinutes: 90 },
+      { name: "Mechas Platinum", price: 80000, duration: 150, role: "colorist", applicationMinutes: 30, processingMinutes: 120 },
+      { name: "Color Inoa", price: 53000, duration: 90, role: "colorist", applicationMinutes: 30, processingMinutes: 60 },
     ],
   },
   {
@@ -54,10 +67,10 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
     name: "Manos y pies",
     icon: "Hand",
     services: [
-      { name: "Manicuría", price: 7500, duration: 45 },
-      { name: "Semipermanente OPI", price: 12000, duration: 60 },
-      { name: "Pedicuría", price: 9500, duration: 60 },
-      { name: "Belleza de pies", price: 11000, duration: 60 },
+      { name: "Manicuría", price: 13000, duration: 40, role: "nail" },
+      { name: "Semipermanente OPI", price: 21000, duration: 50, role: "nail" },
+      { name: "Pedicuría", price: 17000, duration: 50, role: "nail" },
+      { name: "Belleza de pies", price: 19500, duration: 50, role: "nail" },
     ],
   },
   {
@@ -65,25 +78,43 @@ export const SERVICE_CATEGORIES: ServiceCategory[] = [
     name: "Maquillaje, Masajes y Reflexología",
     icon: "Sparkles",
     services: [
-      { name: "Maquillaje social", price: 18000, duration: 60 },
-      { name: "Maquillaje novia", price: 38000, duration: 90 },
-      { name: "Masaje descontracturante", price: 16000, duration: 60 },
-      { name: "Reflexología", price: 14000, duration: 45 },
+      { name: "Maquillaje social", price: 32000, duration: 60, role: "stylist" },
+      { name: "Maquillaje novia", price: 67500, duration: 90, role: "stylist" },
+      { name: "Masaje descontracturante", price: 28500, duration: 60, role: "stylist" },
+      { name: "Reflexología", price: 25000, duration: 45, role: "stylist" },
     ],
   },
 ];
 
+export const ROLE_LABEL: Record<Role, string> = {
+  stylist: "Estilista",
+  colorist: "Colorista",
+  nail: "Manicurista",
+};
+
 export type AppointmentStatus = "Confirmado" | "Completado" | "Cancelado";
+
+// One scheduled item inside an appointment
+export type ScheduledItem = {
+  serviceName: string;
+  role: Role;
+  startMinutes: number; // offset from appointment start
+  durationMinutes: number; // active time professional is engaged
+  price: number;
+};
+
 export type Appointment = {
   id: string;
-  service: string;
+  service: string; // joined names for display
   category: string;
-  date: string; // ISO yyyy-mm-dd
-  time: string; // HH:mm
+  date: string;
+  time: string;
   name: string;
   phone: string;
   status: AppointmentStatus;
   price: number;
+  totalDuration?: number;
+  items?: ScheduledItem[];
   productsUsed?: string[];
 };
 
@@ -96,33 +127,42 @@ export type Review = {
   date: string;
 };
 
+export type UserAccount = {
+  name: string;
+  phone: string;
+  email: string;
+  password: string;
+};
+
 const APPT_KEY = "morena_appointments";
 const REVIEW_KEY = "morena_reviews";
-const USER_KEY = "morena_user";
+const USERS_KEY = "morena_users_v2";
+const SESSION_KEY = "morena_session_v2";
 const ADMIN_KEY = "morena_admin_mode";
+const LEGACY_USER_KEY = "morena_user";
 
 const SEED_APPTS: Appointment[] = [
-  { id: "a1", service: "Ritual Morena (con peinado)", category: "Lavados y tratamientos", date: "2026-04-15", time: "11:00", name: "Cliente", phone: "1153074500", status: "Completado", price: 22000, productsUsed: ["Kérastase Rituel Therapiste", "Kérastase Elixir Ultime — aceite de terminación"] },
-  { id: "a2", service: "Color Inoa", category: "Coloración", date: "2026-05-20", time: "14:30", name: "Cliente", phone: "1153074500", status: "Completado", price: 30000, productsUsed: ["L'Oréal INOA 7.5", "L'Oréal INOA 3.0 raíces", "Shampoo post-color Vitamino Color"] },
-  { id: "a3", service: "Semipermanente OPI", category: "Manos y pies", date: "2026-03-02", time: "16:00", name: "Cliente", phone: "1153074500", status: "Completado", price: 12000, productsUsed: ["OPI Infinite Shine — Bubble Bath", "OPI Top Coat"] },
+  { id: "a1", service: "Ritual Morena (con peinado)", category: "Lavados y tratamientos", date: "2026-04-15", time: "11:00", name: "Cliente", phone: "1153074500", status: "Completado", price: 38500, productsUsed: ["Kérastase Rituel Therapiste", "Kérastase Elixir Ultime"] },
+  { id: "a2", service: "Color Inoa", category: "Coloración", date: "2026-05-20", time: "14:30", name: "Cliente", phone: "1153074500", status: "Completado", price: 53000, productsUsed: ["L'Oréal INOA 7.5", "Shampoo Vitamino Color"] },
+  { id: "a3", service: "Semipermanente OPI", category: "Manos y pies", date: "2026-03-02", time: "16:00", name: "Cliente", phone: "1153074500", status: "Completado", price: 21000, productsUsed: ["OPI Bubble Bath", "OPI Top Coat"] },
 ];
 
-const ADMIN_SEED_APPTS_TODAY = (): Appointment[] => {
+export const ADMIN_SEED_APPTS_TODAY = (): Appointment[] => {
   const today = new Date().toISOString().slice(0, 10);
   return [
-    { id: "t1", service: "Brushing Premium", category: "Peinados", date: today, time: "10:00", name: "Valentina G.", phone: "1144556677", status: "Confirmado", price: 11000 },
-    { id: "t2", service: "Color Inoa", category: "Coloración", date: today, time: "11:30", name: "Martina Fernández", phone: "1133221100", status: "Confirmado", price: 30000 },
-    { id: "t3", service: "Ritual Morena (con peinado)", category: "Lavados y tratamientos", date: today, time: "14:00", name: "Catalina Pérez", phone: "1122334455", status: "Confirmado", price: 22000 },
-    { id: "t4", service: "Manicuría", category: "Manos y pies", date: today, time: "16:30", name: "Florencia Aguirre", phone: "1166778899", status: "Confirmado", price: 7500 },
+    { id: "t1", service: "Brushing Premium", category: "Peinados", date: today, time: "10:00", name: "Valentina G.", phone: "1144556677", status: "Confirmado", price: 19500 },
+    { id: "t2", service: "Color Inoa", category: "Coloración", date: today, time: "11:30", name: "Martina Fernández", phone: "1133221100", status: "Confirmado", price: 53000 },
+    { id: "t3", service: "Ritual Morena (con peinado)", category: "Lavados y tratamientos", date: today, time: "14:00", name: "Catalina Pérez", phone: "1122334455", status: "Confirmado", price: 38500 },
+    { id: "t4", service: "Manicuría", category: "Manos y pies", date: today, time: "16:30", name: "Florencia Aguirre", phone: "1166778899", status: "Confirmado", price: 13000 },
   ];
 };
 
 const SEED_REVIEWS: Review[] = [
   { id: "r1", name: "Sofía Martínez", rating: 5, comment: "Hermoso lugar y trato increíble. Salí feliz con mi color.", service: "Color Inoa", date: "2026-04-12" },
-  { id: "r2", name: "Lucía Paredes", rating: 5, comment: "El Ritual Morena es una experiencia única. Mi pelo quedó espectacular.", service: "Ritual Morena (con peinado)", date: "2026-03-28" },
+  { id: "r2", name: "Lucía Paredes", rating: 5, comment: "El Ritual Morena es una experiencia única.", service: "Ritual Morena (con peinado)", date: "2026-03-28" },
   { id: "r3", name: "Camila Romero", rating: 4, comment: "Excelente atención. El brushing me encantó.", service: "Brushing Premium", date: "2026-03-10" },
   { id: "r4", name: "Florencia Aguirre", rating: 5, comment: "Profesionalismo y calidez. Ya soy clienta fija.", service: "Mechas Platinum", date: "2026-02-22" },
-  { id: "r5", name: "Valentina González", rating: 5, comment: "Las chicas son divinas y el lugar es precioso. Súper recomendable.", service: "Semipermanente OPI", date: "2026-05-18" },
+  { id: "r5", name: "Valentina González", rating: 5, comment: "Las chicas son divinas y el lugar es precioso.", service: "Semipermanente OPI", date: "2026-05-18" },
 ];
 
 function read<T>(key: string, seed: T): T {
@@ -142,8 +182,7 @@ function write<T>(key: string, val: T) {
 export const apptStore = {
   list: () => read<Appointment[]>(APPT_KEY, SEED_APPTS),
   add: (a: Appointment) => {
-    const all = apptStore.list();
-    const next = [a, ...all];
+    const next = [a, ...apptStore.list()];
     write(APPT_KEY, next);
     return next;
   },
@@ -164,19 +203,65 @@ export const reviewStore = {
   },
 };
 
-export const userStore = {
-  get: (): string | null => {
+// ------------ Auth (mock localStorage) ------------
+export const authStore = {
+  listUsers: (): UserAccount[] => read<UserAccount[]>(USERS_KEY, []),
+  current: (): UserAccount | null => {
     if (typeof window === "undefined") return null;
-    return localStorage.getItem(USER_KEY);
+    const email = localStorage.getItem(SESSION_KEY);
+    if (!email) return null;
+    return authStore.listUsers().find((u) => u.email === email) ?? null;
   },
-  set: (name: string) => {
+  signup: (u: UserAccount): { ok: boolean; error?: string } => {
+    const users = authStore.listUsers();
+    if (users.some((x) => x.email.toLowerCase() === u.email.toLowerCase())) {
+      return { ok: false, error: "Ya existe una cuenta con ese email." };
+    }
+    write(USERS_KEY, [...users, u]);
+    localStorage.setItem(SESSION_KEY, u.email);
+    return { ok: true };
+  },
+  login: (email: string, password: string): { ok: boolean; error?: string } => {
+    const user = authStore.listUsers().find((u) => u.email.toLowerCase() === email.toLowerCase());
+    if (!user) return { ok: false, error: "Cuenta no encontrada." };
+    if (user.password !== password) return { ok: false, error: "Contraseña incorrecta." };
+    localStorage.setItem(SESSION_KEY, user.email);
+    return { ok: true };
+  },
+  logout: () => {
     if (typeof window === "undefined") return;
-    localStorage.setItem(USER_KEY, name);
+    localStorage.removeItem(SESSION_KEY);
   },
-  clear: () => {
+  update: (patch: Partial<UserAccount>) => {
+    const cur = authStore.current();
+    if (!cur) return null;
+    const updated = { ...cur, ...patch };
+    const users = authStore.listUsers().map((u) => (u.email === cur.email ? updated : u));
+    write(USERS_KEY, users);
+    if (patch.email && patch.email !== cur.email) {
+      localStorage.setItem(SESSION_KEY, patch.email);
+    }
+    return updated;
+  },
+  // Migrate legacy "morena_user" name into a placeholder account
+  migrateLegacy: () => {
     if (typeof window === "undefined") return;
-    localStorage.removeItem(USER_KEY);
+    const legacy = localStorage.getItem(LEGACY_USER_KEY);
+    if (!legacy) return;
+    if (authStore.current()) {
+      localStorage.removeItem(LEGACY_USER_KEY);
+      return;
+    }
+    // Keep the name visible but don't auto-create an account; just remove.
+    localStorage.removeItem(LEGACY_USER_KEY);
   },
+};
+
+// Legacy export kept so older code paths still compile.
+export const userStore = {
+  get: (): string | null => authStore.current()?.name ?? null,
+  set: (_name: string) => { /* deprecated */ },
+  clear: () => authStore.logout(),
 };
 
 export const adminStore = {
@@ -191,7 +276,7 @@ export const adminStore = {
   },
 };
 
-// Loyalty: 5 visits = free haircut. Counts Completados.
+// Loyalty
 export const POINTS_GOAL = 5;
 export function getPointsInfo() {
   const completed = apptStore.list().filter((a) => a.status === "Completado");
@@ -201,20 +286,106 @@ export function getPointsInfo() {
   return { total, current, goal: POINTS_GOAL, rewards, history: completed };
 }
 
-// Mock availability — returns time slots for a given date (Mon–Sat 9–18)
-export function getAvailableSlots(date: Date): string[] {
-  const day = date.getDay(); // 0 sun
+// ------------ Availability ------------
+// Pre-populated occupied slots per weekday (0=Sun..6=Sat).
+// Each entry is a "HH:mm" the salon shows as Occupied.
+const BUSY_BY_WEEKDAY: Record<number, string[]> = {
+  1: ["10:00", "10:30", "11:00", "11:30", "15:30", "16:00"], // Monday busy 10–12 + late
+  2: ["09:30", "12:00", "14:30", "17:00"],
+  3: ["14:00", "14:30", "15:00", "15:30"], // Wednesday 14–16 partially
+  4: ["10:30", "11:30", "16:30"],
+  5: ["09:30", "11:00", "13:00", "15:30", "17:30"],
+  6: ["09:00", "09:30", "10:00", "11:00", "11:30", "12:00", "13:30", "14:00", "15:00", "16:00", "16:30", "17:00"], // Saturday almost full
+};
+
+export type Slot = { time: string; status: "available" | "occupied" };
+
+export function getSlotsForDate(date: Date): Slot[] {
+  const day = date.getDay();
   if (day === 0) return [];
-  const slots: string[] = [];
+  const busy = new Set(BUSY_BY_WEEKDAY[day] ?? []);
+  const slots: Slot[] = [];
   for (let h = 9; h < 18; h++) {
     for (const m of ["00", "30"]) {
-      const key = `${date.getDate()}-${h}-${m}`;
-      const hash = [...key].reduce((s, c) => s + c.charCodeAt(0), 0);
-      if (hash % 7 === 0) continue;
-      slots.push(`${String(h).padStart(2, "0")}:${m}`);
+      const t = `${String(h).padStart(2, "0")}:${m}`;
+      slots.push({ time: t, status: busy.has(t) ? "occupied" : "available" });
     }
   }
   return slots;
+}
+
+// Back-compat helper (returns only available)
+export function getAvailableSlots(date: Date): string[] {
+  return getSlotsForDate(date).filter((s) => s.status === "available").map((s) => s.time);
+}
+
+// ------------ Smart scheduling ------------
+// Given selected services, produce a sequenced list with start offsets in minutes.
+// Rules:
+//  - Color services (role=colorist) start at t=0, colorist active for applicationMinutes only.
+//  - Nail services scheduled during color processing if room; otherwise after.
+//  - Stylist services (cuts, brushing, treatments) scheduled AFTER color total time
+//    (application + processing) so a haircut after color starts 90+ min later.
+//  - With no color: simple sequential by selection order.
+export function buildSchedule(selected: Service[]): { items: ScheduledItem[]; totalMinutes: number } {
+  const colors = selected.filter((s) => s.role === "colorist");
+  const nails = selected.filter((s) => s.role === "nail");
+  const stylists = selected.filter((s) => s.role === "stylist");
+
+  const items: ScheduledItem[] = [];
+
+  if (colors.length === 0) {
+    // Sequential per-role: stylists first then nails (could be parallel but simulate serial chair time)
+    let t = 0;
+    for (const s of stylists) {
+      items.push({ serviceName: s.name, role: s.role, startMinutes: t, durationMinutes: s.duration, price: s.price });
+      t += s.duration;
+    }
+    let tn = 0;
+    for (const s of nails) {
+      items.push({ serviceName: s.name, role: s.role, startMinutes: tn, durationMinutes: s.duration, price: s.price });
+      tn += s.duration;
+    }
+    return { items, totalMinutes: Math.max(t, tn) };
+  }
+
+  // With color: place color first
+  let colorEnd = 0;
+  let colorProcessingStart = 0;
+  let colorProcessingEnd = 0;
+  for (const c of colors) {
+    const app = c.applicationMinutes ?? c.duration;
+    const proc = c.processingMinutes ?? 0;
+    items.push({ serviceName: c.name, role: "colorist", startMinutes: 0, durationMinutes: app, price: c.price });
+    colorProcessingStart = app;
+    colorProcessingEnd = app + proc;
+    colorEnd = colorProcessingEnd;
+  }
+
+  // Nails during processing window
+  let nailCursor = colorProcessingStart;
+  for (const n of nails) {
+    items.push({ serviceName: n.name, role: "nail", startMinutes: nailCursor, durationMinutes: n.duration, price: n.price });
+    nailCursor += n.duration;
+  }
+
+  // Stylist services after processing
+  let stylCursor = colorEnd;
+  for (const s of stylists) {
+    items.push({ serviceName: s.name, role: "stylist", startMinutes: stylCursor, durationMinutes: s.duration, price: s.price });
+    stylCursor += s.duration;
+  }
+
+  const total = Math.max(colorEnd, nailCursor, stylCursor);
+  return { items, totalMinutes: total };
+}
+
+export function addMinutes(hhmm: string, mins: number): string {
+  const [h, m] = hhmm.split(":").map(Number);
+  const total = h * 60 + m + mins;
+  const nh = Math.floor(total / 60);
+  const nm = total % 60;
+  return `${String(nh).padStart(2, "0")}:${String(nm).padStart(2, "0")}`;
 }
 
 export function formatPrice(n: number) {
