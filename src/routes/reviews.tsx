@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { reviewStore, type Review } from "@/lib/salon-data";
+import { reviewStore, userStore, SERVICE_CATEGORIES, type Review } from "@/lib/salon-data";
 import { SectionHeader } from "@/components/SectionHeader";
 import { Star } from "lucide-react";
 
@@ -8,6 +8,8 @@ export const Route = createFileRoute("/reviews")({
   head: () => ({ meta: [{ title: "Reseñas — Morena Hair Design" }] }),
   component: ReviewsPage,
 });
+
+const ALL_SERVICES = SERVICE_CATEGORIES.flatMap((c) => c.services.map((s) => s.name));
 
 function Stars({ value, size = 14, onSelect }: { value: number; size?: number; onSelect?: (n: number) => void }) {
   return (
@@ -35,7 +37,8 @@ function Stars({ value, size = 14, onSelect }: { value: number; size?: number; o
 function ReviewsPage() {
   const [list, setList] = useState<Review[]>(() => reviewStore.list());
   const [rating, setRating] = useState(5);
-  const [name, setName] = useState("");
+  const [name, setName] = useState(() => userStore.get() ?? "");
+  const [service, setService] = useState("");
   const [comment, setComment] = useState("");
   const avg = list.length ? list.reduce((s, r) => s + r.rating, 0) / list.length : 0;
 
@@ -47,10 +50,11 @@ function ReviewsPage() {
       name: name.trim().slice(0, 60),
       rating,
       comment: comment.trim().slice(0, 400),
+      service: service || undefined,
       date: new Date().toISOString().slice(0, 10),
     };
     setList(reviewStore.add(r));
-    setName(""); setComment(""); setRating(5);
+    setComment(""); setRating(5); setService("");
   }
 
   return (
@@ -65,7 +69,7 @@ function ReviewsPage() {
         </div>
       </div>
 
-      <form onSubmit={submit} className="px-5 mt-6 rounded-2xl">
+      <form onSubmit={submit} className="px-5 mt-6">
         <div className="rounded-2xl bg-card border border-border/60 p-5 shadow-soft space-y-3">
           <div className="text-sm font-medium">Dejá tu reseña</div>
           <div className="flex items-center gap-3">
@@ -79,6 +83,14 @@ function ReviewsPage() {
             maxLength={60}
             className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:border-gold"
           />
+          <select
+            value={service}
+            onChange={(e) => setService(e.target.value)}
+            className="w-full rounded-xl border border-border bg-background px-4 py-3 text-sm focus:outline-none focus:border-gold"
+          >
+            <option value="">Servicio (opcional)</option>
+            {ALL_SERVICES.map((s) => <option key={s} value={s}>{s}</option>)}
+          </select>
           <textarea
             value={comment}
             onChange={(e) => setComment(e.target.value)}
@@ -104,6 +116,7 @@ function ReviewsPage() {
               <div className="text-sm font-medium">{r.name}</div>
               <Stars value={r.rating} />
             </div>
+            {r.service && <div className="text-[11px] text-gold mt-0.5">{r.service}</div>}
             <p className="text-sm text-muted-foreground mt-2 leading-relaxed">{r.comment}</p>
             <div className="text-[11px] text-muted-foreground/70 mt-2">
               {new Date(r.date + "T00:00:00").toLocaleDateString("es-AR", { day: "numeric", month: "long", year: "numeric" })}

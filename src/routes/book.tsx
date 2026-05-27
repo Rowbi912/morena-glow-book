@@ -1,6 +1,6 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { SERVICE_CATEGORIES, getAvailableSlots, apptStore, formatPrice, type Service } from "@/lib/salon-data";
+import { SERVICE_CATEGORIES, getAvailableSlots, apptStore, userStore, formatPrice, type Service } from "@/lib/salon-data";
 import { SectionHeader } from "@/components/SectionHeader";
 import { Check, ChevronLeft, CalendarDays, Clock, User } from "lucide-react";
 
@@ -18,7 +18,7 @@ function BookPage() {
   const [service, setService] = useState<Service | null>(null);
   const [date, setDate] = useState<Date | null>(null);
   const [time, setTime] = useState<string | null>(null);
-  const [name, setName] = useState("");
+  const [name, setName] = useState(() => userStore.get() ?? "");
   const [phone, setPhone] = useState("");
   const [confirmedId, setConfirmedId] = useState<string | null>(null);
 
@@ -31,7 +31,7 @@ function BookPage() {
     for (let i = 0; i < 21; i++) {
       const d = new Date(today);
       d.setDate(today.getDate() + i);
-      if (d.getDay() !== 0) arr.push(d); // skip sundays
+      if (d.getDay() !== 0) arr.push(d);
     }
     return arr;
   }, []);
@@ -60,7 +60,6 @@ function BookPage() {
     <div>
       <SectionHeader eyebrow={`Paso ${Math.min(step, 5)} de 5`} title="Reservar turno" />
 
-      {/* progress */}
       <div className="px-5 mb-6">
         <div className="h-1 bg-border/70 rounded-full overflow-hidden">
           <div
