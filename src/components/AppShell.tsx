@@ -1,5 +1,5 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { Home, Scissors, CalendarPlus, CalendarCheck, Gift, Phone, Shield } from "lucide-react";
+import { Home, Scissors, CalendarPlus, CalendarCheck, Gift, Phone, User as UserIcon } from "lucide-react";
 import logo from "@/assets/logo.png";
 
 const NAV = [
@@ -25,11 +25,11 @@ export function AppShell() {
             </div>
           </Link>
           <Link
-            to="/admin"
-            aria-label="Owner"
-            className="text-muted-foreground/40 hover:text-gold transition p-2"
+            to="/profile"
+            aria-label="Mi cuenta"
+            className="h-9 w-9 rounded-full bg-card border border-border flex items-center justify-center text-muted-foreground hover:text-gold hover:border-gold transition"
           >
-            <Shield size={15} strokeWidth={1.5} />
+            <UserIcon size={16} strokeWidth={1.7} />
           </Link>
         </div>
       </header>
@@ -43,13 +43,10 @@ export function AppShell() {
           {NAV.map(({ to, label, icon: Icon }) => {
             const active = to === "/" ? location.pathname === "/" : location.pathname.startsWith(to);
             return (
-              <Link
-                key={to}
-                to={to}
+              <Link key={to} to={to}
                 className={`flex flex-col items-center gap-1 py-2.5 text-[10px] transition ${
                   active ? "text-gold" : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
+                }`}>
                 <Icon size={18} strokeWidth={active ? 2.2 : 1.6} />
                 <span className="tracking-wide">{label}</span>
               </Link>

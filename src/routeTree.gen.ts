@@ -11,12 +11,15 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as ReviewsRouteImport } from './routes/reviews'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PointsRouteImport } from './routes/points'
+import { Route as LookRouteImport } from './routes/look'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as BookRouteImport } from './routes/book'
 import { Route as AppointmentsRouteImport } from './routes/appointments'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiRecommendLookRouteImport } from './routes/api/recommend-look'
 
 const ServicesRoute = ServicesRouteImport.update({
   id: '/services',
@@ -28,9 +31,19 @@ const ReviewsRoute = ReviewsRouteImport.update({
   path: '/reviews',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PointsRoute = PointsRouteImport.update({
   id: '/points',
   path: '/points',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LookRoute = LookRouteImport.update({
+  id: '/look',
+  path: '/look',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ContactRoute = ContactRouteImport.update({
@@ -58,6 +71,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiRecommendLookRoute = ApiRecommendLookRouteImport.update({
+  id: '/api/recommend-look',
+  path: '/api/recommend-look',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -65,9 +83,12 @@ export interface FileRoutesByFullPath {
   '/appointments': typeof AppointmentsRoute
   '/book': typeof BookRoute
   '/contact': typeof ContactRoute
+  '/look': typeof LookRoute
   '/points': typeof PointsRoute
+  '/profile': typeof ProfileRoute
   '/reviews': typeof ReviewsRoute
   '/services': typeof ServicesRoute
+  '/api/recommend-look': typeof ApiRecommendLookRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -75,9 +96,12 @@ export interface FileRoutesByTo {
   '/appointments': typeof AppointmentsRoute
   '/book': typeof BookRoute
   '/contact': typeof ContactRoute
+  '/look': typeof LookRoute
   '/points': typeof PointsRoute
+  '/profile': typeof ProfileRoute
   '/reviews': typeof ReviewsRoute
   '/services': typeof ServicesRoute
+  '/api/recommend-look': typeof ApiRecommendLookRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -86,9 +110,12 @@ export interface FileRoutesById {
   '/appointments': typeof AppointmentsRoute
   '/book': typeof BookRoute
   '/contact': typeof ContactRoute
+  '/look': typeof LookRoute
   '/points': typeof PointsRoute
+  '/profile': typeof ProfileRoute
   '/reviews': typeof ReviewsRoute
   '/services': typeof ServicesRoute
+  '/api/recommend-look': typeof ApiRecommendLookRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -98,9 +125,12 @@ export interface FileRouteTypes {
     | '/appointments'
     | '/book'
     | '/contact'
+    | '/look'
     | '/points'
+    | '/profile'
     | '/reviews'
     | '/services'
+    | '/api/recommend-look'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -108,9 +138,12 @@ export interface FileRouteTypes {
     | '/appointments'
     | '/book'
     | '/contact'
+    | '/look'
     | '/points'
+    | '/profile'
     | '/reviews'
     | '/services'
+    | '/api/recommend-look'
   id:
     | '__root__'
     | '/'
@@ -118,9 +151,12 @@ export interface FileRouteTypes {
     | '/appointments'
     | '/book'
     | '/contact'
+    | '/look'
     | '/points'
+    | '/profile'
     | '/reviews'
     | '/services'
+    | '/api/recommend-look'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -129,9 +165,12 @@ export interface RootRouteChildren {
   AppointmentsRoute: typeof AppointmentsRoute
   BookRoute: typeof BookRoute
   ContactRoute: typeof ContactRoute
+  LookRoute: typeof LookRoute
   PointsRoute: typeof PointsRoute
+  ProfileRoute: typeof ProfileRoute
   ReviewsRoute: typeof ReviewsRoute
   ServicesRoute: typeof ServicesRoute
+  ApiRecommendLookRoute: typeof ApiRecommendLookRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -150,11 +189,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReviewsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/points': {
       id: '/points'
       path: '/points'
       fullPath: '/points'
       preLoaderRoute: typeof PointsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/look': {
+      id: '/look'
+      path: '/look'
+      fullPath: '/look'
+      preLoaderRoute: typeof LookRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/contact': {
@@ -192,6 +245,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/recommend-look': {
+      id: '/api/recommend-look'
+      path: '/api/recommend-look'
+      fullPath: '/api/recommend-look'
+      preLoaderRoute: typeof ApiRecommendLookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -201,20 +261,13 @@ const rootRouteChildren: RootRouteChildren = {
   AppointmentsRoute: AppointmentsRoute,
   BookRoute: BookRoute,
   ContactRoute: ContactRoute,
+  LookRoute: LookRoute,
   PointsRoute: PointsRoute,
+  ProfileRoute: ProfileRoute,
   ReviewsRoute: ReviewsRoute,
   ServicesRoute: ServicesRoute,
+  ApiRecommendLookRoute: ApiRecommendLookRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
