@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { apptStore, type Appointment, type AppointmentStatus } from "@/lib/salon-data";
 import { SectionHeader } from "@/components/SectionHeader";
-import { CalendarDays, Clock, CalendarPlus } from "lucide-react";
+import { CalendarDays, Clock, CalendarPlus, Sparkles } from "lucide-react";
 
 export const Route = createFileRoute("/appointments")({
   head: () => ({ meta: [{ title: "Mis turnos — Morena Hair Design" }] }),
@@ -75,6 +75,23 @@ function ApptCard({ a, onCancel }: { a: Appointment; onCancel?: (id: string) => 
         <span className="flex items-center gap-1.5"><CalendarDays size={13}/> {d.toLocaleDateString("es-AR", { weekday: "short", day: "numeric", month: "short" })}</span>
         <span className="flex items-center gap-1.5"><Clock size={13}/> {a.time} hs</span>
       </div>
+
+      {a.status === "Completado" && a.productsUsed && a.productsUsed.length > 0 && (
+        <div className="mt-4 rounded-xl bg-gold-soft/25 border border-gold/20 p-3">
+          <div className="flex items-center gap-1.5 text-gold text-[10px] uppercase tracking-[0.2em]">
+            <Sparkles size={11}/> Productos utilizados
+          </div>
+          <ul className="mt-2 space-y-1">
+            {a.productsUsed.map((p, i) => (
+              <li key={i} className="text-xs text-foreground/80 flex gap-2">
+                <span className="text-gold">·</span>
+                <span>{p}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {onCancel && a.status === "Confirmado" && (
         <button
           onClick={() => onCancel(a.id)}

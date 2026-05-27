@@ -1,5 +1,5 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
-import { Home, Scissors, CalendarPlus, CalendarCheck, Star, Phone } from "lucide-react";
+import { Home, Scissors, CalendarPlus, CalendarCheck, Gift, Phone, Shield } from "lucide-react";
 import logo from "@/assets/logo.png";
 
 const NAV = [
@@ -7,7 +7,7 @@ const NAV = [
   { to: "/services", label: "Servicios", icon: Scissors },
   { to: "/book", label: "Reservar", icon: CalendarPlus },
   { to: "/appointments", label: "Turnos", icon: CalendarCheck },
-  { to: "/reviews", label: "Reseñas", icon: Star },
+  { to: "/points", label: "Puntos", icon: Gift },
   { to: "/contact", label: "Contacto", icon: Phone },
 ] as const;
 
@@ -25,10 +25,11 @@ export function AppShell() {
             </div>
           </Link>
           <Link
-            to="/book"
-            className="hidden sm:inline-flex items-center rounded-full bg-foreground text-background text-xs px-4 py-2 hover:opacity-90 transition"
+            to="/admin"
+            aria-label="Owner"
+            className="text-muted-foreground/40 hover:text-gold transition p-2"
           >
-            Reservar turno
+            <Shield size={15} strokeWidth={1.5} />
           </Link>
         </div>
       </header>
