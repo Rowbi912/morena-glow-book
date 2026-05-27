@@ -67,11 +67,17 @@ function Home() {
       <section className="px-5 mt-4">
         <div className="relative rounded-3xl overflow-hidden shadow-elegant aspect-[16/11]">
           <img
-            src="https://images.unsplash.com/photo-1560066984-138dadb4c035?w=1200&q=80"
-            alt="Interior del salón"
+            src="https://morenahairdesign.com.ar/img/home-portfolio/img_1.jpg"
+            alt="Morena Hair Design"
             className="absolute inset-0 h-full w-full object-cover"
+            onError={(e) => {
+              const img = e.currentTarget;
+              const current = img.src.match(/img_(\d)\.jpg/)?.[1];
+              const next = current ? Number(current) + 1 : 2;
+              if (next <= 4) img.src = `https://morenahairdesign.com.ar/img/home-portfolio/img_${next}.jpg`;
+            }}
           />
-          <div className="absolute inset-0 bg-gradient-to-t from-foreground/85 via-foreground/30 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-foreground/90 via-foreground/50 to-foreground/30" />
           <div className="absolute inset-x-0 bottom-0 p-5 text-background">
             <div className="text-[10px] tracking-[0.3em] uppercase text-gold">Animate a cambiar</div>
             <div className="font-serif text-2xl mt-1">tu <em className="italic text-gold">look</em>.</div>
