@@ -2,17 +2,21 @@ import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router"
 import { useEffect, useMemo, useState } from "react";
 import {
   SERVICE_CATEGORIES,
-  getSlotsForDate,
+  STAFF,
   apptStore,
   authStore,
   buildSchedule,
   addMinutes,
   formatPrice,
   ROLE_LABEL,
+  assignStaff,
+  findAlternativeSlots,
+  getSlotsForBooking,
   type Service,
+  type Staff,
 } from "@/lib/salon-data";
 import { SectionHeader } from "@/components/SectionHeader";
-import { Check, ChevronLeft, CalendarDays, Clock, Plus, X, Sparkles } from "lucide-react";
+import { Check, ChevronLeft, CalendarDays, Clock, Plus, X, Sparkles, AlertTriangle } from "lucide-react";
 
 export const Route = createFileRoute("/book")({
   head: () => ({ meta: [{ title: "Reservar turno — Morena Hair Design" }] }),
@@ -31,19 +35,20 @@ function BookPage() {
   const [step, setStep] = useState<Step>(1);
   const [categoryId, setCategoryId] = useState<string | null>(null);
   const [selected, setSelected] = useState<PickedService[]>([]);
+  const [preferredStaffId, setPreferredStaffId] = useState<string | undefined>(undefined);
   const [date, setDate] = useState<Date | null>(null);
   const [time, setTime] = useState<string | null>(null);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
   const [confirmedId, setConfirmedId] = useState<string | null>(null);
+  const [confirmedItems, setConfirmedItems] = useState<ReturnType<typeof buildSchedule>["items"]>([]);
+  const [conflict, setConflict] = useState<{ msg: string; alternatives: string[] } | null>(null);
 
-  // Pre-fill from auth
   useEffect(() => {
     const u = authStore.current();
     if (u) { setName(u.name); setPhone(u.phone); }
   }, []);
 
-  // Pre-fill suggested services from /look
   useEffect(() => {
     if (!search.suggested) return;
     const names = decodeURIComponent(search.suggested).split("|");
@@ -64,6 +69,10 @@ function BookPage() {
   const hasNail = selected.some((s) => s.role === "nail");
   const showNailSuggestion = hasColor && !hasNail;
 
+  // Relevant staff to pick from (only roles that are needed)
+  const relevantRoles = useMemo(() => new Set(selected.map((s) => s.role)), [selected]);
+  const eligibleStaff = STAFF.filter((s) => relevantRoles.size === 0 || relevantRoles.has(s.role));
+
   function toggleService(s: Service, catName: string) {
     setSelected((prev) => {
       const exists = prev.find((p) => p.name === s.name);
@@ -71,11 +80,9 @@ function BookPage() {
       return [...prev, { ...s, category: catName }];
     });
   }
-
   function removeService(svcName: string) {
     setSelected((prev) => prev.filter((p) => p.name !== svcName));
   }
-
   function addNailQuick(svcName: string) {
     const cat = SERVICE_CATEGORIES.find((c) => c.id === "manos-pies");
     if (!cat) return;
@@ -85,35 +92,48 @@ function BookPage() {
 
   const days = useMemo(() => {
     const arr: Date[] = [];
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    const today = new Date(); today.setHours(0, 0, 0, 0);
     for (let i = 0; i < 21; i++) {
-      const d = new Date(today);
-      d.setDate(today.getDate() + i);
+      const d = new Date(today); d.setDate(today.getDate() + i);
       if (d.getDay() !== 0) arr.push(d);
     }
     return arr;
   }, []);
 
-  const slots = date ? getSlotsForDate(date) : [];
+  const slots = useMemo(
+    () => (date ? getSlotsForBooking(date, schedule.items, preferredStaffId) : []),
+    [date, schedule.items, preferredStaffId],
+  );
 
   function confirm() {
     if (selected.length === 0 || !date || !time) return;
+    const dateStr = date.toISOString().slice(0, 10);
+    const res = assignStaff(schedule.items, dateStr, time, preferredStaffId);
+    if (!res.ok) {
+      const alternatives = findAlternativeSlots(schedule.items, date, preferredStaffId, 3);
+      setConflict({
+        msg: "Este horario acaba de ocuparse. Estos son los próximos disponibles:",
+        alternatives,
+      });
+      return;
+    }
+    setConflict(null);
     const id = `a${Date.now()}`;
     const categories = Array.from(new Set(selected.map((s) => s.category))).join(", ");
     apptStore.add({
       id,
       service: selected.map((s) => s.name).join(" + "),
       category: categories,
-      date: date.toISOString().slice(0, 10),
+      date: dateStr,
       time,
       name,
       phone,
       status: "Confirmado",
       price: totalPrice,
       totalDuration: schedule.totalMinutes,
-      items: schedule.items,
+      items: res.items,
     });
+    setConfirmedItems(res.items);
     setConfirmedId(id);
     setStep(6);
   }
@@ -220,22 +240,41 @@ function BookPage() {
         )}
 
         {step === 3 && (
-          <div>
-            <p className="text-sm text-muted-foreground mb-3">Elegí un día</p>
-            <div className="grid grid-cols-4 gap-2">
-              {days.map((d) => {
-                const isSel = date && d.toDateString() === date.toDateString();
-                return (
-                  <button key={d.toISOString()} onClick={() => { setDate(d); setTime(null); setStep(4); }}
-                    className={`rounded-2xl border p-3 text-center transition ${
-                      isSel ? "bg-foreground text-background border-foreground" : "bg-card border-border/60 hover:border-gold"
-                    }`}>
-                    <div className="text-[10px] uppercase tracking-wider opacity-70">{d.toLocaleDateString("es-AR", { weekday: "short" })}</div>
-                    <div className="font-serif text-xl mt-1">{d.getDate()}</div>
-                    <div className="text-[10px] opacity-70">{d.toLocaleDateString("es-AR", { month: "short" })}</div>
-                  </button>
-                );
-              })}
+          <div className="space-y-6">
+            {/* Optional staff preference */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <p className="text-sm text-muted-foreground">Preferencia de profesional <span className="text-[10px] uppercase tracking-wider">(opcional)</span></p>
+                {preferredStaffId && (
+                  <button onClick={() => setPreferredStaffId(undefined)} className="text-[11px] text-gold">Sin preferencia</button>
+                )}
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {eligibleStaff.map((s) => (
+                  <StaffPickCard key={s.id} staff={s} selected={preferredStaffId === s.id}
+                    onSelect={() => setPreferredStaffId(preferredStaffId === s.id ? undefined : s.id)} />
+                ))}
+              </div>
+              <p className="text-[11px] text-muted-foreground mt-2">Si no elegís, asignamos al profesional disponible que mejor encaje.</p>
+            </div>
+
+            <div>
+              <p className="text-sm text-muted-foreground mb-3">Elegí un día</p>
+              <div className="grid grid-cols-4 gap-2">
+                {days.map((d) => {
+                  const isSel = date && d.toDateString() === date.toDateString();
+                  return (
+                    <button key={d.toISOString()} onClick={() => { setDate(d); setTime(null); setStep(4); }}
+                      className={`rounded-2xl border p-3 text-center transition ${
+                        isSel ? "bg-foreground text-background border-foreground" : "bg-card border-border/60 hover:border-gold"
+                      }`}>
+                      <div className="text-[10px] uppercase tracking-wider opacity-70">{d.toLocaleDateString("es-AR", { weekday: "short" })}</div>
+                      <div className="font-serif text-xl mt-1">{d.getDate()}</div>
+                      <div className="text-[10px] opacity-70">{d.toLocaleDateString("es-AR", { month: "short" })}</div>
+                    </button>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
@@ -267,18 +306,41 @@ function BookPage() {
                 );
               })}
             </div>
-            <div className="mt-4 flex items-center gap-4 text-[11px] text-muted-foreground">
+            <div className="mt-4 flex items-center gap-4 text-[11px] text-muted-foreground flex-wrap">
               <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full border border-border bg-card" /> Disponible</span>
               <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full bg-muted" /> Ocupado</span>
               <span className="flex items-center gap-1.5"><span className="h-3 w-3 rounded-full bg-gold" /> Seleccionado</span>
             </div>
             {slots.length === 0 && <p className="text-sm text-muted-foreground mt-4">Sin disponibilidad este día.</p>}
+            {slots.length > 0 && slots.every((s) => s.status === "occupied") && (
+              <p className="text-sm text-muted-foreground mt-4">Todos los horarios están ocupados para tu selección. Probá otro día o cambiá la preferencia de profesional.</p>
+            )}
           </div>
         )}
 
         {step === 5 && date && time && (
           <div className="space-y-4">
-            <ScheduleBreakdown items={schedule.items} startTime={time} totalMinutes={schedule.totalMinutes} totalPrice={totalPrice} />
+            {conflict && (
+              <div className="rounded-2xl bg-destructive/10 border border-destructive/30 p-4">
+                <div className="flex items-center gap-2 text-destructive text-xs">
+                  <AlertTriangle size={14} /> {conflict.msg}
+                </div>
+                {conflict.alternatives.length > 0 ? (
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    {conflict.alternatives.map((t) => (
+                      <button key={t} onClick={() => { setTime(t); setConflict(null); }}
+                        className="rounded-full bg-background border border-gold/50 text-gold text-xs px-3 py-1.5">
+                        {t} hs
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-xs text-muted-foreground mt-2">No quedan horarios libres en este día. Probá otra fecha.</p>
+                )}
+              </div>
+            )}
+
+            <ScheduleBreakdown items={schedule.items} startTime={time} totalMinutes={schedule.totalMinutes} totalPrice={totalPrice} preferredStaffId={preferredStaffId} />
 
             <div className="rounded-2xl bg-card border border-border/60 p-4 shadow-soft text-sm text-muted-foreground space-y-1">
               <div className="flex items-center gap-2"><CalendarDays size={14}/> {date.toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long" })}</div>
@@ -312,7 +374,7 @@ function BookPage() {
             <h2 className="font-serif text-2xl mt-5">¡Turno confirmado!</h2>
             <p className="text-sm text-muted-foreground mt-2">Te esperamos en Morena Hair Design.</p>
             <div className="mt-6 text-left">
-              <ScheduleBreakdown items={schedule.items} startTime={time} totalMinutes={schedule.totalMinutes} totalPrice={totalPrice} />
+              <ScheduleBreakdown items={confirmedItems} startTime={time} totalMinutes={schedule.totalMinutes} totalPrice={totalPrice} />
             </div>
             <button onClick={() => navigate({ to: "/appointments" })}
               className="mt-6 w-full rounded-full bg-foreground text-background text-sm py-3.5">
@@ -351,11 +413,27 @@ function BookPage() {
   );
 }
 
-function ScheduleBreakdown({ items, startTime, totalMinutes, totalPrice }: {
+function StaffPickCard({ staff, selected, onSelect }: { staff: Staff; selected: boolean; onSelect: () => void }) {
+  return (
+    <button onClick={onSelect}
+      className={`rounded-2xl border p-3 text-left transition flex items-center gap-3 ${
+        selected ? "bg-gold-soft/40 border-gold" : "bg-card border-border/60 hover:border-gold"
+      }`}>
+      <img src={staff.photo} alt={staff.name} className="h-10 w-10 rounded-full object-cover ring-1 ring-border" />
+      <div className="min-w-0">
+        <div className="text-xs font-medium truncate">{staff.name}</div>
+        <div className="text-[10px] text-muted-foreground truncate">{staff.specialty}</div>
+      </div>
+    </button>
+  );
+}
+
+function ScheduleBreakdown({ items, startTime, totalMinutes, totalPrice, preferredStaffId }: {
   items: ReturnType<typeof buildSchedule>["items"];
   startTime: string;
   totalMinutes: number;
   totalPrice: number;
+  preferredStaffId?: string;
 }) {
   const sorted = [...items].sort((a, b) => a.startMinutes - b.startMinutes);
   return (
@@ -365,13 +443,14 @@ function ScheduleBreakdown({ items, startTime, totalMinutes, totalPrice }: {
         {sorted.map((it, i) => {
           const start = addMinutes(startTime, it.startMinutes);
           const end = addMinutes(startTime, it.startMinutes + it.durationMinutes);
+          const staff = it.staffId ? STAFF.find((s) => s.id === it.staffId) : undefined;
           return (
             <li key={i} className="flex items-start gap-3">
               <div className="text-[10px] tabular-nums text-gold font-medium mt-0.5 w-12 shrink-0">{start}</div>
               <div className="flex-1">
                 <div className="text-sm font-medium leading-tight">{it.serviceName}</div>
                 <div className="text-[11px] text-muted-foreground mt-0.5">
-                  {ROLE_LABEL[it.role]} · {start}–{end} hs · {it.durationMinutes} min
+                  {ROLE_LABEL[it.role]}{staff ? ` · ${staff.name}` : ""} · {start}–{end} hs · {it.durationMinutes} min
                 </div>
               </div>
               <div className="text-xs text-gold tabular-nums">{formatPrice(it.price)}</div>
@@ -379,10 +458,15 @@ function ScheduleBreakdown({ items, startTime, totalMinutes, totalPrice }: {
           );
         })}
       </ul>
-      <div className="mt-4 pt-3 border-t border-border/60 flex items-center justify-between">
-        <span className="text-xs text-muted-foreground">Total · {totalMinutes} min</span>
-        <span className="font-medium text-gold">{formatPrice(totalPrice)}</span>
+      <div className="mt-4 pt-3 border-t border-border/60 flex items-center justify-between text-sm">
+        <span className="text-muted-foreground">Total · {totalMinutes} min</span>
+        <span className="text-gold font-medium tabular-nums">{formatPrice(totalPrice)}</span>
       </div>
+      {preferredStaffId && (
+        <p className="mt-2 text-[10px] text-muted-foreground">
+          Preferencia: {STAFF.find((s) => s.id === preferredStaffId)?.name}
+        </p>
+      )}
     </div>
   );
 }

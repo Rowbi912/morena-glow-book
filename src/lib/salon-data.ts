@@ -1,5 +1,26 @@
 export type Role = "stylist" | "colorist" | "nail";
 
+export type Staff = {
+  id: string;
+  name: string;
+  role: Role;
+  specialty: string;
+  photo: string;
+  daysOff: number[]; // 0=Sun..6=Sat
+  pin: string;
+};
+
+const avatar = (name: string) =>
+  `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=C9A96E&color=FAF8F5&size=200&font-size=0.4&bold=true`;
+
+export const STAFF: Staff[] = [
+  { id: "s1", name: "Lucía Romero", role: "colorist", specialty: "Colorista master · Balayage", photo: avatar("Lucía Romero"), daysOff: [0], pin: "1111" },
+  { id: "s2", name: "Valentina Suárez", role: "colorist", specialty: "Colorista · Mechas platinum", photo: avatar("Valentina Suárez"), daysOff: [0, 1], pin: "2222" },
+  { id: "s3", name: "Camila Fernández", role: "stylist", specialty: "Estilista · Cortes y peinados", photo: avatar("Camila Fernández"), daysOff: [0], pin: "3333" },
+  { id: "s4", name: "Sofía Martínez", role: "stylist", specialty: "Estilista · Tratamientos", photo: avatar("Sofía Martínez"), daysOff: [0, 3], pin: "4444" },
+  { id: "s5", name: "Florencia Aguirre", role: "nail", specialty: "Manicurista · Semipermanente", photo: avatar("Florencia Aguirre"), daysOff: [0], pin: "5555" },
+];
+
 export type Service = {
   name: string;
   price: number;
@@ -101,6 +122,9 @@ export type ScheduledItem = {
   startMinutes: number; // offset from appointment start
   durationMinutes: number; // active time professional is engaged
   price: number;
+  staffId?: string;
+  notes?: string;
+  completed?: boolean;
 };
 
 export type Appointment = {
@@ -134,28 +158,35 @@ export type UserAccount = {
   password: string;
 };
 
-const APPT_KEY = "morena_appointments";
+const APPT_KEY = "morena_appointments_v3";
 const REVIEW_KEY = "morena_reviews";
 const USERS_KEY = "morena_users_v2";
 const SESSION_KEY = "morena_session_v2";
 const ADMIN_KEY = "morena_admin_mode";
+const STAFF_SESSION_KEY = "morena_staff_session";
 const LEGACY_USER_KEY = "morena_user";
+
+const todayStr = () => new Date().toISOString().slice(0, 10);
 
 const SEED_APPTS: Appointment[] = [
   { id: "a1", service: "Ritual Morena (con peinado)", category: "Lavados y tratamientos", date: "2026-04-15", time: "11:00", name: "Cliente", phone: "1153074500", status: "Completado", price: 38500, productsUsed: ["Kérastase Rituel Therapiste", "Kérastase Elixir Ultime"] },
   { id: "a2", service: "Color Inoa", category: "Coloración", date: "2026-05-20", time: "14:30", name: "Cliente", phone: "1153074500", status: "Completado", price: 53000, productsUsed: ["L'Oréal INOA 7.5", "Shampoo Vitamino Color"] },
   { id: "a3", service: "Semipermanente OPI", category: "Manos y pies", date: "2026-03-02", time: "16:00", name: "Cliente", phone: "1153074500", status: "Completado", price: 21000, productsUsed: ["OPI Bubble Bath", "OPI Top Coat"] },
+  // Today's seed bookings (drive admin/staff dashboards + conflict prevention)
+  { id: "td1", service: "Brushing Premium", category: "Peinados", date: todayStr(), time: "10:00", name: "Valentina G.", phone: "1144556677", status: "Confirmado", price: 19500, totalDuration: 40,
+    items: [{ serviceName: "Brushing Premium", role: "stylist", startMinutes: 0, durationMinutes: 40, price: 19500, staffId: "s3" }] },
+  { id: "td2", service: "Color Inoa", category: "Coloración", date: todayStr(), time: "11:30", name: "Martina Fernández", phone: "1133221100", status: "Confirmado", price: 53000, totalDuration: 90,
+    items: [{ serviceName: "Color Inoa", role: "colorist", startMinutes: 0, durationMinutes: 30, price: 53000, staffId: "s1", notes: "INOA 7.5 raíz" }] },
+  { id: "td3", service: "Ritual Morena (con peinado)", category: "Lavados y tratamientos", date: todayStr(), time: "14:00", name: "Catalina Pérez", phone: "1122334455", status: "Confirmado", price: 38500, totalDuration: 60,
+    items: [{ serviceName: "Ritual Morena (con peinado)", role: "stylist", startMinutes: 0, durationMinutes: 60, price: 38500, staffId: "s4" }] },
+  { id: "td4", service: "Manicuría", category: "Manos y pies", date: todayStr(), time: "16:30", name: "Florencia A.", phone: "1166778899", status: "Confirmado", price: 13000, totalDuration: 40,
+    items: [{ serviceName: "Manicuría", role: "nail", startMinutes: 0, durationMinutes: 40, price: 13000, staffId: "s5" }] },
+  { id: "td5", service: "Mechas Platinum", category: "Coloración", date: todayStr(), time: "15:30", name: "Julieta Ramos", phone: "1177889900", status: "Confirmado", price: 80000, totalDuration: 150,
+    items: [{ serviceName: "Mechas Platinum", role: "colorist", startMinutes: 0, durationMinutes: 30, price: 80000, staffId: "s2", notes: "Retoque mechas, papel" }] },
 ];
 
-export const ADMIN_SEED_APPTS_TODAY = (): Appointment[] => {
-  const today = new Date().toISOString().slice(0, 10);
-  return [
-    { id: "t1", service: "Brushing Premium", category: "Peinados", date: today, time: "10:00", name: "Valentina G.", phone: "1144556677", status: "Confirmado", price: 19500 },
-    { id: "t2", service: "Color Inoa", category: "Coloración", date: today, time: "11:30", name: "Martina Fernández", phone: "1133221100", status: "Confirmado", price: 53000 },
-    { id: "t3", service: "Ritual Morena (con peinado)", category: "Lavados y tratamientos", date: today, time: "14:00", name: "Catalina Pérez", phone: "1122334455", status: "Confirmado", price: 38500 },
-    { id: "t4", service: "Manicuría", category: "Manos y pies", date: today, time: "16:30", name: "Florencia Aguirre", phone: "1166778899", status: "Confirmado", price: 13000 },
-  ];
-};
+export const ADMIN_SEED_APPTS_TODAY = (): Appointment[] =>
+  apptStore.list().filter((a) => a.date === todayStr() && a.status !== "Cancelado");
 
 const SEED_REVIEWS: Review[] = [
   { id: "r1", name: "Sofía Martínez", rating: 5, comment: "Hermoso lugar y trato increíble. Salí feliz con mi color.", service: "Color Inoa", date: "2026-04-12" },
@@ -391,3 +422,160 @@ export function addMinutes(hhmm: string, mins: number): string {
 export function formatPrice(n: number) {
   return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
 }
+
+// ------------ Conflict prevention & staff assignment ------------
+export const SALON_OPEN_MIN = 9 * 60;
+export const SALON_CLOSE_MIN = 18 * 60;
+
+export function hhmmToMin(t: string): number {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
+}
+
+export type Busy = { staffId: string; start: number; end: number; apptId: string };
+
+export function getBusyOn(date: string): Busy[] {
+  const busy: Busy[] = [];
+  for (const a of apptStore.list()) {
+    if (a.date !== date || a.status === "Cancelado") continue;
+    const baseMin = hhmmToMin(a.time);
+    const items = a.items ?? [];
+    for (const it of items) {
+      if (!it.staffId) continue;
+      busy.push({
+        staffId: it.staffId,
+        start: baseMin + it.startMinutes,
+        end: baseMin + it.startMinutes + it.durationMinutes,
+        apptId: a.id,
+      });
+    }
+  }
+  return busy;
+}
+
+function staffWorksOn(s: Staff, date: string): boolean {
+  const day = new Date(date + "T00:00:00").getDay();
+  return !s.daysOff.includes(day);
+}
+
+/**
+ * Try to assign a staff member to each scheduled item.
+ * Honors preferredStaffId when role matches and availability permits.
+ * Returns { ok: true, items } with staffId populated, or { ok: false, conflicts }.
+ */
+export function assignStaff(
+  items: ScheduledItem[],
+  date: string,
+  startTime: string,
+  preferredStaffId?: string,
+): { ok: true; items: ScheduledItem[] } | { ok: false; conflicts: string[] } {
+  const baseMin = hhmmToMin(startTime);
+  const busy = getBusyOn(date);
+  const localBusy: Busy[] = [...busy];
+  const assigned: ScheduledItem[] = [];
+  const conflicts: string[] = [];
+
+  for (const it of items) {
+    const start = baseMin + it.startMinutes;
+    const end = start + it.durationMinutes;
+    if (end > SALON_CLOSE_MIN) {
+      conflicts.push(it.serviceName);
+      continue;
+    }
+    const candidates = STAFF.filter((s) => s.role === it.role && staffWorksOn(s, date));
+    const ordered = preferredStaffId
+      ? [...candidates].sort((a, b) => (a.id === preferredStaffId ? -1 : b.id === preferredStaffId ? 1 : 0))
+      : candidates;
+    const chosen = ordered.find(
+      (s) => !localBusy.some((b) => b.staffId === s.id && !(end <= b.start || start >= b.end)),
+    );
+    if (!chosen) {
+      conflicts.push(it.serviceName);
+      continue;
+    }
+    localBusy.push({ staffId: chosen.id, start, end, apptId: "new" });
+    assigned.push({ ...it, staffId: chosen.id });
+  }
+
+  if (conflicts.length) return { ok: false, conflicts };
+  return { ok: true, items: assigned };
+}
+
+export function findAlternativeSlots(
+  items: ScheduledItem[],
+  date: Date,
+  preferredStaffId: string | undefined,
+  count = 3,
+): string[] {
+  const dateStr = date.toISOString().slice(0, 10);
+  const all = getSlotsForDate(date);
+  const out: string[] = [];
+  for (const s of all) {
+    if (s.status !== "available") continue;
+    const res = assignStaff(items, dateStr, s.time, preferredStaffId);
+    if (res.ok) out.push(s.time);
+    if (out.length >= count) break;
+  }
+  return out;
+}
+
+export function getSlotsForBooking(
+  date: Date,
+  items: ScheduledItem[],
+  preferredStaffId?: string,
+): Slot[] {
+  const base = getSlotsForDate(date);
+  if (items.length === 0) return base;
+  const dateStr = date.toISOString().slice(0, 10);
+  return base.map((s) => {
+    if (s.status === "occupied") return s;
+    const res = assignStaff(items, dateStr, s.time, preferredStaffId);
+    return res.ok ? s : { time: s.time, status: "occupied" as const };
+  });
+}
+
+// ------------ Staff session (employee login) ------------
+export const staffSession = {
+  current: (): Staff | null => {
+    if (typeof window === "undefined") return null;
+    const id = localStorage.getItem(STAFF_SESSION_KEY);
+    if (!id) return null;
+    return STAFF.find((s) => s.id === id) ?? null;
+  },
+  login: (staffId: string, pin: string): { ok: boolean; error?: string } => {
+    const s = STAFF.find((x) => x.id === staffId);
+    if (!s) return { ok: false, error: "Profesional no encontrado." };
+    if (s.pin !== pin) return { ok: false, error: "PIN incorrecto." };
+    localStorage.setItem(STAFF_SESSION_KEY, staffId);
+    return { ok: true };
+  },
+  logout: () => {
+    if (typeof window === "undefined") return;
+    localStorage.removeItem(STAFF_SESSION_KEY);
+  },
+};
+
+// Mark a single item completed inside an appointment
+export function setItemCompleted(apptId: string, itemIndex: number, completed: boolean) {
+  const list = apptStore.list().map((a) => {
+    if (a.id !== apptId || !a.items) return a;
+    const items = a.items.map((it, i) => (i === itemIndex ? { ...it, completed } : it));
+    const allDone = items.every((it) => it.completed);
+    return { ...a, items, status: allDone ? ("Completado" as const) : a.status };
+  });
+  write(APPT_KEY, list);
+  return list;
+}
+
+export function getStaffAgenda(staffId: string, date: string) {
+  return apptStore
+    .list()
+    .filter((a) => a.date === date && a.status !== "Cancelado" && a.items?.some((it) => it.staffId === staffId))
+    .flatMap((a) =>
+      (a.items ?? [])
+        .map((it, idx) => ({ appt: a, item: it, index: idx }))
+        .filter((x) => x.item.staffId === staffId),
+    )
+    .sort((a, b) => hhmmToMin(a.appt.time) + a.item.startMinutes - (hhmmToMin(b.appt.time) + b.item.startMinutes));
+}
+
