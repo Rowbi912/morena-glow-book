@@ -1,5 +1,26 @@
 export type Role = "stylist" | "colorist" | "nail";
 
+export type Staff = {
+  id: string;
+  name: string;
+  role: Role;
+  specialty: string;
+  photo: string;
+  daysOff: number[]; // 0=Sun..6=Sat
+  pin: string;
+};
+
+const avatar = (name: string) =>
+  `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=C9A96E&color=FAF8F5&size=200&font-size=0.4&bold=true`;
+
+export const STAFF: Staff[] = [
+  { id: "s1", name: "Lucía Romero", role: "colorist", specialty: "Colorista master · Balayage", photo: avatar("Lucía Romero"), daysOff: [0], pin: "1111" },
+  { id: "s2", name: "Valentina Suárez", role: "colorist", specialty: "Colorista · Mechas platinum", photo: avatar("Valentina Suárez"), daysOff: [0, 1], pin: "2222" },
+  { id: "s3", name: "Camila Fernández", role: "stylist", specialty: "Estilista · Cortes y peinados", photo: avatar("Camila Fernández"), daysOff: [0], pin: "3333" },
+  { id: "s4", name: "Sofía Martínez", role: "stylist", specialty: "Estilista · Tratamientos", photo: avatar("Sofía Martínez"), daysOff: [0, 3], pin: "4444" },
+  { id: "s5", name: "Florencia Aguirre", role: "nail", specialty: "Manicurista · Semipermanente", photo: avatar("Florencia Aguirre"), daysOff: [0], pin: "5555" },
+];
+
 export type Service = {
   name: string;
   price: number;
