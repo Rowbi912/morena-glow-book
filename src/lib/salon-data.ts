@@ -422,3 +422,160 @@ export function addMinutes(hhmm: string, mins: number): string {
 export function formatPrice(n: number) {
   return new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS", maximumFractionDigits: 0 }).format(n);
 }
+
+// ------------ Conflict prevention & staff assignment ------------
+export const SALON_OPEN_MIN = 9 * 60;
+export const SALON_CLOSE_MIN = 18 * 60;
+
+export function hhmmToMin(t: string): number {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
+}
+
+export type Busy = { staffId: string; start: number; end: number; apptId: string };
+
+export function getBusyOn(date: string): Busy[] {
+  const busy: Busy[] = [];
+  for (const a of apptStore.list()) {
+    if (a.date !== date || a.status === "Cancelado") continue;
+    const baseMin = hhmmToMin(a.time);
+    const items = a.items ?? [];
+    for (const it of items) {
+      if (!it.staffId) continue;
+      busy.push({
+        staffId: it.staffId,
+        start: baseMin + it.startMinutes,
+        end: baseMin + it.startMinutes + it.durationMinutes,
+        apptId: a.id,
+      });
+    }
+  }
+  return busy;
+}
+
+function staffWorksOn(s: Staff, date: string): boolean {
+  const day = new Date(date + "T00:00:00").getDay();
+  return !s.daysOff.includes(day);
+}
+
+/**
+ * Try to assign a staff member to each scheduled item.
+ * Honors preferredStaffId when role matches and availability permits.
+ * Returns { ok: true, items } with staffId populated, or { ok: false, conflicts }.
+ */
+export function assignStaff(
+  items: ScheduledItem[],
+  date: string,
+  startTime: string,
+  preferredStaffId?: string,
+): { ok: true; items: ScheduledItem[] } | { ok: false; conflicts: string[] } {
+  const baseMin = hhmmToMin(startTime);
+  const busy = getBusyOn(date);
+  const localBusy: Busy[] = [...busy];
+  const assigned: ScheduledItem[] = [];
+  const conflicts: string[] = [];
+
+  for (const it of items) {
+    const start = baseMin + it.startMinutes;
+    const end = start + it.durationMinutes;
+    if (end > SALON_CLOSE_MIN) {
+      conflicts.push(it.serviceName);
+      continue;
+    }
+    const candidates = STAFF.filter((s) => s.role === it.role && staffWorksOn(s, date));
+    const ordered = preferredStaffId
+      ? [...candidates].sort((a, b) => (a.id === preferredStaffId ? -1 : b.id === preferredStaffId ? 1 : 0))
+      : candidates;
+    const chosen = ordered.find(
+      (s) => !localBusy.some((b) => b.staffId === s.id && !(end <= b.start || start >= b.end)),
+    );
+    if (!chosen) {
+      conflicts.push(it.serviceName);
+      continue;
+    }
+    localBusy.push({ staffId: chosen.id, start, end, apptId: "new" });
+    assigned.push({ ...it, staffId: chosen.id });
+  }
+
+  if (conflicts.length) return { ok: false, conflicts };
+  return { ok: true, items: assigned };
+}
+
+export function findAlternativeSlots(
+  items: ScheduledItem[],
+  date: Date,
+  preferredStaffId: string | undefined,
+  count = 3,
+): string[] {
+  const dateStr = date.toISOString().slice(0, 10);
+  const all = getSlotsForDate(date);
+  const out: string[] = [];
+  for (const s of all) {
+    if (s.status !== "available") continue;
+    const res = assignStaff(items, dateStr, s.time, preferredStaffId);
+    if (res.ok) out.push(s.time);
+    if (out.length >= count) break;
+  }
+  return out;
+}
+
+export function getSlotsForBooking(
+  date: Date,
+  items: ScheduledItem[],
+  preferredStaffId?: string,
+): Slot[] {
+  const base = getSlotsForDate(date);
+  if (items.length === 0) return base;
+  const dateStr = date.toISOString().slice(0, 10);
+  return base.map((s) => {
+    if (s.status === "occupied") return s;
+    const res = assignStaff(items, dateStr, s.time, preferredStaffId);
+    return res.ok ? s : { time: s.time, status: "occupied" as const };
+  });
+}
+
+// ------------ Staff session (employee login) ------------
+export const staffSession = {
+  current: (): Staff | null => {
+    if (typeof window === "undefined") return null;
+    const id = localStorage.getItem(STAFF_SESSION_KEY);
+    if (!id) return null;
+    return STAFF.find((s) => s.id === id) ?? null;
+  },
+  login: (staffId: string, pin: string): { ok: boolean; error?: string } => {
+    const s = STAFF.find((x) => x.id === staffId);
+    if (!s) return { ok: false, error: "Profesional no encontrado." };
+    if (s.pin !== pin) return { ok: false, error: "PIN incorrecto." };
+    localStorage.setItem(STAFF_SESSION_KEY, staffId);
+    return { ok: true };
+  },
+  logout: () => {
+    if (typeof window === "undefined") return;
+    localStorage.removeItem(STAFF_SESSION_KEY);
+  },
+};
+
+// Mark a single item completed inside an appointment
+export function setItemCompleted(apptId: string, itemIndex: number, completed: boolean) {
+  const list = apptStore.list().map((a) => {
+    if (a.id !== apptId || !a.items) return a;
+    const items = a.items.map((it, i) => (i === itemIndex ? { ...it, completed } : it));
+    const allDone = items.every((it) => it.completed);
+    return { ...a, items, status: allDone ? ("Completado" as const) : a.status };
+  });
+  write(APPT_KEY, list);
+  return list;
+}
+
+export function getStaffAgenda(staffId: string, date: string) {
+  return apptStore
+    .list()
+    .filter((a) => a.date === date && a.status !== "Cancelado" && a.items?.some((it) => it.staffId === staffId))
+    .flatMap((a) =>
+      (a.items ?? [])
+        .map((it, idx) => ({ appt: a, item: it, index: idx }))
+        .filter((x) => x.item.staffId === staffId),
+    )
+    .sort((a, b) => hhmmToMin(a.appt.time) + a.item.startMinutes - (hhmmToMin(b.appt.time) + b.item.startMinutes));
+}
+
