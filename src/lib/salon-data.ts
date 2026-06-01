@@ -122,6 +122,9 @@ export type ScheduledItem = {
   startMinutes: number; // offset from appointment start
   durationMinutes: number; // active time professional is engaged
   price: number;
+  staffId?: string;
+  notes?: string;
+  completed?: boolean;
 };
 
 export type Appointment = {
