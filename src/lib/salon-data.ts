@@ -158,28 +158,35 @@ export type UserAccount = {
   password: string;
 };
 
-const APPT_KEY = "morena_appointments";
+const APPT_KEY = "morena_appointments_v3";
 const REVIEW_KEY = "morena_reviews";
 const USERS_KEY = "morena_users_v2";
 const SESSION_KEY = "morena_session_v2";
 const ADMIN_KEY = "morena_admin_mode";
+const STAFF_SESSION_KEY = "morena_staff_session";
 const LEGACY_USER_KEY = "morena_user";
+
+const todayStr = () => new Date().toISOString().slice(0, 10);
 
 const SEED_APPTS: Appointment[] = [
   { id: "a1", service: "Ritual Morena (con peinado)", category: "Lavados y tratamientos", date: "2026-04-15", time: "11:00", name: "Cliente", phone: "1153074500", status: "Completado", price: 38500, productsUsed: ["Kérastase Rituel Therapiste", "Kérastase Elixir Ultime"] },
   { id: "a2", service: "Color Inoa", category: "Coloración", date: "2026-05-20", time: "14:30", name: "Cliente", phone: "1153074500", status: "Completado", price: 53000, productsUsed: ["L'Oréal INOA 7.5", "Shampoo Vitamino Color"] },
   { id: "a3", service: "Semipermanente OPI", category: "Manos y pies", date: "2026-03-02", time: "16:00", name: "Cliente", phone: "1153074500", status: "Completado", price: 21000, productsUsed: ["OPI Bubble Bath", "OPI Top Coat"] },
+  // Today's seed bookings (drive admin/staff dashboards + conflict prevention)
+  { id: "td1", service: "Brushing Premium", category: "Peinados", date: todayStr(), time: "10:00", name: "Valentina G.", phone: "1144556677", status: "Confirmado", price: 19500, totalDuration: 40,
+    items: [{ serviceName: "Brushing Premium", role: "stylist", startMinutes: 0, durationMinutes: 40, price: 19500, staffId: "s3" }] },
+  { id: "td2", service: "Color Inoa", category: "Coloración", date: todayStr(), time: "11:30", name: "Martina Fernández", phone: "1133221100", status: "Confirmado", price: 53000, totalDuration: 90,
+    items: [{ serviceName: "Color Inoa", role: "colorist", startMinutes: 0, durationMinutes: 30, price: 53000, staffId: "s1", notes: "INOA 7.5 raíz" }] },
+  { id: "td3", service: "Ritual Morena (con peinado)", category: "Lavados y tratamientos", date: todayStr(), time: "14:00", name: "Catalina Pérez", phone: "1122334455", status: "Confirmado", price: 38500, totalDuration: 60,
+    items: [{ serviceName: "Ritual Morena (con peinado)", role: "stylist", startMinutes: 0, durationMinutes: 60, price: 38500, staffId: "s4" }] },
+  { id: "td4", service: "Manicuría", category: "Manos y pies", date: todayStr(), time: "16:30", name: "Florencia A.", phone: "1166778899", status: "Confirmado", price: 13000, totalDuration: 40,
+    items: [{ serviceName: "Manicuría", role: "nail", startMinutes: 0, durationMinutes: 40, price: 13000, staffId: "s5" }] },
+  { id: "td5", service: "Mechas Platinum", category: "Coloración", date: todayStr(), time: "15:30", name: "Julieta Ramos", phone: "1177889900", status: "Confirmado", price: 80000, totalDuration: 150,
+    items: [{ serviceName: "Mechas Platinum", role: "colorist", startMinutes: 0, durationMinutes: 30, price: 80000, staffId: "s2", notes: "Retoque mechas, papel" }] },
 ];
 
-export const ADMIN_SEED_APPTS_TODAY = (): Appointment[] => {
-  const today = new Date().toISOString().slice(0, 10);
-  return [
-    { id: "t1", service: "Brushing Premium", category: "Peinados", date: today, time: "10:00", name: "Valentina G.", phone: "1144556677", status: "Confirmado", price: 19500 },
-    { id: "t2", service: "Color Inoa", category: "Coloración", date: today, time: "11:30", name: "Martina Fernández", phone: "1133221100", status: "Confirmado", price: 53000 },
-    { id: "t3", service: "Ritual Morena (con peinado)", category: "Lavados y tratamientos", date: today, time: "14:00", name: "Catalina Pérez", phone: "1122334455", status: "Confirmado", price: 38500 },
-    { id: "t4", service: "Manicuría", category: "Manos y pies", date: today, time: "16:30", name: "Florencia Aguirre", phone: "1166778899", status: "Confirmado", price: 13000 },
-  ];
-};
+export const ADMIN_SEED_APPTS_TODAY = (): Appointment[] =>
+  apptStore.list().filter((a) => a.date === todayStr() && a.status !== "Cancelado");
 
 const SEED_REVIEWS: Review[] = [
   { id: "r1", name: "Sofía Martínez", rating: 5, comment: "Hermoso lugar y trato increíble. Salí feliz con mi color.", service: "Color Inoa", date: "2026-04-12" },
