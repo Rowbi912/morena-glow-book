@@ -61,6 +61,10 @@ function StaffPage() {
             {err && <p className="text-xs text-destructive">{err}</p>}
             <button type="submit" className="w-full rounded-full bg-foreground text-background text-sm py-3">Ingresar</button>
             <p className="text-[11px] text-muted-foreground text-center">Demo · PINs: 1111 / 2222 / 3333 / 4444 / 5555</p>
+            <div className="text-center text-[11px] pt-1">
+              <Link to="/reception" className="text-gold mr-3">Soy recepción</Link>
+              <Link to="/admin" className="text-gold">Soy dueña</Link>
+            </div>
           </div>
         </form>
       </div>
