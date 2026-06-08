@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   STAFF,
@@ -8,10 +8,12 @@ import {
   setItemCompleted,
   addMinutes,
   formatPrice,
+  notifStore,
   type Staff,
+  type Notification,
 } from "@/lib/salon-data";
 import { SectionHeader } from "@/components/SectionHeader";
-import { Lock, LogOut, Check, Clock, User as UserIcon, StickyNote, Sparkles } from "lucide-react";
+import { Lock, LogOut, Check, Clock, User as UserIcon, StickyNote, Sparkles, Bell, X } from "lucide-react";
 
 export const Route = createFileRoute("/staff")({
   head: () => ({ meta: [{ title: "Mi agenda — Morena Hair Design" }] }),
