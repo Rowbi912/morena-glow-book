@@ -77,12 +77,43 @@ function StaffPage() {
 function StaffAgenda({ me, onLogout, tick, onChange }: { me: Staff; onLogout: () => void; tick: number; onChange: () => void }) {
   const today = new Date().toISOString().slice(0, 10);
   const agenda = useMemo(() => getStaffAgenda(me.id, today), [me.id, today, tick]);
+  const [notifs, setNotifs] = useState<Notification[]>([]);
+
+  // Poll notifications and listen for storage events
+  useEffect(() => {
+    const refresh = () => setNotifs(notifStore.unreadForStaff(me.id));
+    refresh();
+    const i = setInterval(refresh, 5000);
+    window.addEventListener("storage", refresh);
+    return () => { clearInterval(i); window.removeEventListener("storage", refresh); };
+  }, [me.id, tick]);
 
   const completed = agenda.filter((x) => x.item.completed).length;
   const revenue = agenda.reduce((s, x) => s + x.item.price, 0);
 
   return (
     <div className="pb-10">
+      {/* Arrival notification banners */}
+      {notifs.length > 0 && (
+        <div className="px-5 pt-4 space-y-2">
+          {notifs.slice(0, 3).map((n) => (
+            <div key={n.id} className="rounded-2xl bg-gold text-background p-3 shadow-elegant flex items-start gap-3 animate-in fade-in slide-in-from-top-2">
+              <div className="h-8 w-8 rounded-full bg-background/20 flex items-center justify-center shrink-0">
+                <Bell size={14}/>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="text-[10px] uppercase tracking-[0.2em] opacity-80">Check-in</div>
+                <div className="text-sm font-medium">{n.message}</div>
+              </div>
+              <button onClick={() => { notifStore.markRead(n.id); setNotifs(notifStore.unreadForStaff(me.id)); }}
+                className="h-7 w-7 rounded-full bg-background/15 flex items-center justify-center">
+                <X size={12}/>
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
       <div className="px-5 pt-8 pb-2 flex items-end justify-between">
         <div className="flex items-center gap-3">
           <img src={me.photo} alt={me.name} className="h-12 w-12 rounded-full object-cover ring-1 ring-border" />
