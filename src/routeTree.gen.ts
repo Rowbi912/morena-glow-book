@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as StaffRouteImport } from './routes/staff'
 import { Route as ServicesRouteImport } from './routes/services'
 import { Route as ReviewsRouteImport } from './routes/reviews'
+import { Route as ReceptionRouteImport } from './routes/reception'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PointsRouteImport } from './routes/points'
 import { Route as LookRouteImport } from './routes/look'
@@ -35,6 +36,11 @@ const ServicesRoute = ServicesRouteImport.update({
 const ReviewsRoute = ReviewsRouteImport.update({
   id: '/reviews',
   path: '/reviews',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ReceptionRoute = ReceptionRouteImport.update({
+  id: '/reception',
+  path: '/reception',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -92,6 +98,7 @@ export interface FileRoutesByFullPath {
   '/look': typeof LookRoute
   '/points': typeof PointsRoute
   '/profile': typeof ProfileRoute
+  '/reception': typeof ReceptionRoute
   '/reviews': typeof ReviewsRoute
   '/services': typeof ServicesRoute
   '/staff': typeof StaffRoute
@@ -106,6 +113,7 @@ export interface FileRoutesByTo {
   '/look': typeof LookRoute
   '/points': typeof PointsRoute
   '/profile': typeof ProfileRoute
+  '/reception': typeof ReceptionRoute
   '/reviews': typeof ReviewsRoute
   '/services': typeof ServicesRoute
   '/staff': typeof StaffRoute
@@ -121,6 +129,7 @@ export interface FileRoutesById {
   '/look': typeof LookRoute
   '/points': typeof PointsRoute
   '/profile': typeof ProfileRoute
+  '/reception': typeof ReceptionRoute
   '/reviews': typeof ReviewsRoute
   '/services': typeof ServicesRoute
   '/staff': typeof StaffRoute
@@ -137,6 +146,7 @@ export interface FileRouteTypes {
     | '/look'
     | '/points'
     | '/profile'
+    | '/reception'
     | '/reviews'
     | '/services'
     | '/staff'
@@ -151,6 +161,7 @@ export interface FileRouteTypes {
     | '/look'
     | '/points'
     | '/profile'
+    | '/reception'
     | '/reviews'
     | '/services'
     | '/staff'
@@ -165,6 +176,7 @@ export interface FileRouteTypes {
     | '/look'
     | '/points'
     | '/profile'
+    | '/reception'
     | '/reviews'
     | '/services'
     | '/staff'
@@ -180,6 +192,7 @@ export interface RootRouteChildren {
   LookRoute: typeof LookRoute
   PointsRoute: typeof PointsRoute
   ProfileRoute: typeof ProfileRoute
+  ReceptionRoute: typeof ReceptionRoute
   ReviewsRoute: typeof ReviewsRoute
   ServicesRoute: typeof ServicesRoute
   StaffRoute: typeof StaffRoute
@@ -207,6 +220,13 @@ declare module '@tanstack/react-router' {
       path: '/reviews'
       fullPath: '/reviews'
       preLoaderRoute: typeof ReviewsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reception': {
+      id: '/reception'
+      path: '/reception'
+      fullPath: '/reception'
+      preLoaderRoute: typeof ReceptionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -284,6 +304,7 @@ const rootRouteChildren: RootRouteChildren = {
   LookRoute: LookRoute,
   PointsRoute: PointsRoute,
   ProfileRoute: ProfileRoute,
+  ReceptionRoute: ReceptionRoute,
   ReviewsRoute: ReviewsRoute,
   ServicesRoute: ServicesRoute,
   StaffRoute: StaffRoute,
@@ -292,3 +313,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
