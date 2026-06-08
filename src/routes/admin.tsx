@@ -57,6 +57,7 @@ function AdminPage() {
             <button type="submit" className="w-full rounded-full bg-foreground text-background text-sm py-3">Ingresar</button>
             <p className="text-[11px] text-muted-foreground text-center">Demo · PIN: 2828</p>
             <Link to="/staff" className="block text-center text-[11px] text-gold mt-2">Soy profesional · entrar acá</Link>
+            <Link to="/reception" className="block text-center text-[11px] text-gold mt-1">Soy recepción · entrar acá</Link>
           </div>
         </form>
       </div>
