@@ -127,6 +127,8 @@ export type ScheduledItem = {
   completed?: boolean;
 };
 
+export type ArrivalStatus = "pending" | "arrived" | "in_progress" | "done";
+
 export type Appointment = {
   id: string;
   service: string; // joined names for display
@@ -140,6 +142,18 @@ export type Appointment = {
   totalDuration?: number;
   items?: ScheduledItem[];
   productsUsed?: string[];
+  arrival?: ArrivalStatus;
+  arrivedAt?: string;
+  walkIn?: boolean;
+};
+
+export type Notification = {
+  id: string;
+  staffId: string;
+  apptId: string;
+  message: string;
+  createdAt: number;
+  read?: boolean;
 };
 
 export type Review = {
