@@ -172,7 +172,10 @@ export type UserAccount = {
   password: string;
 };
 
-const APPT_KEY = "morena_appointments_v3";
+const RECEPTION_KEY = "morena_reception_mode";
+const NOTIF_KEY = "morena_notifications_v1";
+const RECEPTION_PIN = "9999";
+
 const REVIEW_KEY = "morena_reviews";
 const USERS_KEY = "morena_users_v2";
 const SESSION_KEY = "morena_session_v2";
