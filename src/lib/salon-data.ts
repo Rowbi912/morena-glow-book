@@ -597,3 +597,146 @@ export function getStaffAgenda(staffId: string, date: string) {
     .sort((a, b) => hhmmToMin(a.appt.time) + a.item.startMinutes - (hhmmToMin(b.appt.time) + b.item.startMinutes));
 }
 
+
+// ------------ Notifications (in-app push) ------------
+export const notifStore = {
+  list: (): Notification[] => read<Notification[]>(NOTIF_KEY, []),
+  forStaff: (staffId: string): Notification[] =>
+    notifStore.list().filter((n) => n.staffId === staffId).sort((a, b) => b.createdAt - a.createdAt),
+  unreadForStaff: (staffId: string): Notification[] =>
+    notifStore.forStaff(staffId).filter((n) => !n.read),
+  push: (n: Omit<Notification, "id" | "createdAt" | "read">) => {
+    const all = notifStore.list();
+    const item: Notification = { ...n, id: "n" + Date.now() + Math.random().toString(36).slice(2, 6), createdAt: Date.now(), read: false };
+    write(NOTIF_KEY, [item, ...all]);
+    return item;
+  },
+  markRead: (id: string) => {
+    write(NOTIF_KEY, notifStore.list().map((n) => (n.id === id ? { ...n, read: true } : n)));
+  },
+  markAllRead: (staffId: string) => {
+    write(NOTIF_KEY, notifStore.list().map((n) => (n.staffId === staffId ? { ...n, read: true } : n)));
+  },
+};
+
+// ------------ Reception session ------------
+export const receptionSession = {
+  isOn: (): boolean => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem(RECEPTION_KEY) === "1";
+  },
+  login: (pin: string): { ok: boolean; error?: string } => {
+    if (pin !== RECEPTION_PIN) return { ok: false, error: "PIN incorrecto. Probá 9999." };
+    localStorage.setItem(RECEPTION_KEY, "1");
+    return { ok: true };
+  },
+  logout: () => {
+    if (typeof window === "undefined") return;
+    localStorage.removeItem(RECEPTION_KEY);
+  },
+};
+
+// ------------ Arrival / check-in ------------
+export function checkInClient(apptId: string): { ok: boolean; error?: string } {
+  const list = apptStore.list();
+  const appt = list.find((a) => a.id === apptId);
+  if (!appt) return { ok: false, error: "Turno no encontrado" };
+  const now = new Date();
+  const hhmm = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  const next = list.map((a) =>
+    a.id === apptId ? { ...a, arrival: "arrived" as ArrivalStatus, arrivedAt: hhmm } : a,
+  );
+  write(APPT_KEY, next);
+  // Notify each assigned staff member
+  const seen = new Set<string>();
+  for (const it of appt.items ?? []) {
+    if (!it.staffId || seen.has(it.staffId)) continue;
+    seen.add(it.staffId);
+    notifStore.push({
+      staffId: it.staffId,
+      apptId: appt.id,
+      message: `Tu clienta, ${appt.name}, ya llegó!`,
+    });
+  }
+  return { ok: true };
+}
+
+export function setArrivalStatus(apptId: string, status: ArrivalStatus) {
+  write(
+    APPT_KEY,
+    apptStore.list().map((a) => (a.id === apptId ? { ...a, arrival: status } : a)),
+  );
+}
+
+export function rescheduleAppt(apptId: string, date: string, time: string) {
+  write(
+    APPT_KEY,
+    apptStore.list().map((a) => (a.id === apptId ? { ...a, date, time } : a)),
+  );
+}
+
+export function logProductsUsed(apptId: string, products: string[]) {
+  write(
+    APPT_KEY,
+    apptStore.list().map((a) => (a.id === apptId ? { ...a, productsUsed: products } : a)),
+  );
+}
+
+// ------------ Walk-in booking ------------
+export type WalkInResult = { ok: true; appt: Appointment } | { ok: false; error: string };
+
+export function createWalkIn(serviceName: string, clientName: string, phone: string): WalkInResult {
+  // Find the service definition
+  let svc: Service | undefined;
+  let category = "";
+  for (const c of SERVICE_CATEGORIES) {
+    const f = c.services.find((s) => s.name === serviceName);
+    if (f) { svc = f; category = c.name; break; }
+  }
+  if (!svc) return { ok: false, error: "Servicio no encontrado" };
+
+  const { items } = buildSchedule([svc]);
+  const date = todayStr();
+  const now = new Date();
+  // Try current half-hour rounded up, then forward
+  const startCandidates: string[] = [];
+  let h = now.getHours();
+  let m = now.getMinutes() < 30 ? 30 : 0;
+  if (m === 0) h += 1;
+  for (; h < 18; h++) {
+    for (const mm of (h === now.getHours() ? [m] : [0, 30])) {
+      startCandidates.push(`${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}`);
+    }
+  }
+  for (const t of startCandidates) {
+    const res = assignStaff(items, date, t);
+    if (res.ok) {
+      const appt: Appointment = {
+        id: "w" + Date.now(),
+        service: svc.name,
+        category,
+        date,
+        time: t,
+        name: clientName,
+        phone,
+        status: "Confirmado",
+        price: svc.price,
+        totalDuration: svc.duration,
+        items: res.items,
+        arrival: "arrived",
+        arrivedAt: `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`,
+        walkIn: true,
+      };
+      apptStore.add(appt);
+      // Notify staff
+      const seen = new Set<string>();
+      for (const it of appt.items ?? []) {
+        if (!it.staffId || seen.has(it.staffId)) continue;
+        seen.add(it.staffId);
+        notifStore.push({ staffId: it.staffId, apptId: appt.id, message: `Walk-in: ${clientName} llegó para ${svc.name}.` });
+      }
+      return { ok: true, appt };
+    }
+  }
+  return { ok: false, error: "No hay profesionales disponibles para hoy" };
+}
