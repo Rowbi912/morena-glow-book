@@ -173,12 +173,12 @@ export type UserAccount = {
   password: string;
 };
 
-const APPT_KEY = "morena_appointments_v3";
+const APPT_KEY = "morena_appointments_v4";
 const RECEPTION_KEY = "morena_reception_mode";
-const NOTIF_KEY = "morena_notifications_v1";
+const NOTIF_KEY = "morena_notifications_v2";
 const RECEPTION_PIN = "9999";
 
-const REVIEW_KEY = "morena_reviews";
+const REVIEW_KEY = "morena_reviews_v2";
 const USERS_KEY = "morena_users_v2";
 const SESSION_KEY = "morena_session_v2";
 const ADMIN_KEY = "morena_admin_mode";
@@ -187,32 +187,158 @@ const LEGACY_USER_KEY = "morena_user";
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
-const SEED_APPTS: Appointment[] = [
-  { id: "a1", service: "Ritual Morena (con peinado)", category: "Lavados y tratamientos", date: "2026-04-15", time: "11:00", name: "Cliente", phone: "1153074500", status: "Completado", price: 38500, productsUsed: ["Kérastase Rituel Therapiste", "Kérastase Elixir Ultime"] },
-  { id: "a2", service: "Color Inoa", category: "Coloración", date: "2026-05-20", time: "14:30", name: "Cliente", phone: "1153074500", status: "Completado", price: 53000, productsUsed: ["L'Oréal INOA 7.5", "Shampoo Vitamino Color"] },
-  { id: "a3", service: "Semipermanente OPI", category: "Manos y pies", date: "2026-03-02", time: "16:00", name: "Cliente", phone: "1153074500", status: "Completado", price: 21000, productsUsed: ["OPI Bubble Bath", "OPI Top Coat"] },
-  // Today's seed bookings (drive admin/staff dashboards + conflict prevention)
-  { id: "td1", service: "Brushing Premium", category: "Peinados", date: todayStr(), time: "10:00", name: "Valentina G.", phone: "1144556677", status: "Confirmado", price: 19500, totalDuration: 40,
-    items: [{ serviceName: "Brushing Premium", role: "stylist", startMinutes: 0, durationMinutes: 40, price: 19500, staffId: "s3" }] },
-  { id: "td2", service: "Color Inoa", category: "Coloración", date: todayStr(), time: "11:30", name: "Martina Fernández", phone: "1133221100", status: "Confirmado", price: 53000, totalDuration: 90,
-    items: [{ serviceName: "Color Inoa", role: "colorist", startMinutes: 0, durationMinutes: 30, price: 53000, staffId: "s1", notes: "INOA 7.5 raíz" }] },
-  { id: "td3", service: "Ritual Morena (con peinado)", category: "Lavados y tratamientos", date: todayStr(), time: "14:00", name: "Catalina Pérez", phone: "1122334455", status: "Confirmado", price: 38500, totalDuration: 60,
-    items: [{ serviceName: "Ritual Morena (con peinado)", role: "stylist", startMinutes: 0, durationMinutes: 60, price: 38500, staffId: "s4" }] },
-  { id: "td4", service: "Manicuría", category: "Manos y pies", date: todayStr(), time: "16:30", name: "Florencia A.", phone: "1166778899", status: "Confirmado", price: 13000, totalDuration: 40,
-    items: [{ serviceName: "Manicuría", role: "nail", startMinutes: 0, durationMinutes: 40, price: 13000, staffId: "s5" }] },
-  { id: "td5", service: "Mechas Platinum", category: "Coloración", date: todayStr(), time: "15:30", name: "Julieta Ramos", phone: "1177889900", status: "Confirmado", price: 80000, totalDuration: 150,
-    items: [{ serviceName: "Mechas Platinum", role: "colorist", startMinutes: 0, durationMinutes: 30, price: 80000, staffId: "s2", notes: "Retoque mechas, papel" }] },
-];
+// Anchor "now" to a half-hour within working window so the seeded live scenario
+// renders correctly at any time of day during demos.
+const SCENARIO_NOW_MIN = (() => {
+  const d = new Date();
+  const t = Math.round((d.getHours() * 60 + d.getMinutes()) / 30) * 30;
+  return Math.max(11 * 60, Math.min(15 * 60 + 30, t));
+})();
+const _hhmm = (m: number) =>
+  `${String(Math.floor(((m % 1440) + 1440) % 1440 / 60)).padStart(2, "0")}:${String(((m % 60) + 60) % 60).padStart(2, "0")}`;
+
+function buildTodaySeed(): Appointment[] {
+  const T = todayStr();
+  const N = SCENARIO_NOW_MIN;
+  const A: Appointment[] = [];
+
+  // 1) IN-PROGRESS — Valentina García: Color Inoa (Lucía s1) + Manicuría during processing (Sofía s5)
+  const va = N - 20;
+  A.push({
+    id: "td_va", service: "Color Inoa + Manicuría", category: "Coloración", date: T, time: _hhmm(va),
+    name: "Valentina García", phone: "1144556677", status: "Confirmado", price: 53000 + 13000, totalDuration: 90,
+    items: [
+      { serviceName: "Color Inoa", role: "colorist", startMinutes: 0, durationMinutes: 30, price: 53000, staffId: "s1", notes: "INOA 7.5 raíz · clienta sensible al amoníaco" },
+      { serviceName: "Manicuría", role: "nail", startMinutes: 30, durationMinutes: 40, price: 13000, staffId: "s5", notes: "Asignada durante procesado de color · OPI Bubble Bath" },
+    ],
+    arrival: "in_progress", arrivedAt: _hhmm(va - 5),
+  });
+
+  // 2) IN-PROGRESS — Renata Torres: Corte Damas con Martín (s3)
+  const rt = N - 15;
+  A.push({
+    id: "td_rt", service: "Corte Damas", category: "Cortes", date: T, time: _hhmm(rt),
+    name: "Renata Torres", phone: "1166554433", status: "Confirmado", price: 21000, totalDuration: 45,
+    items: [{ serviceName: "Corte Damas", role: "stylist", startMinutes: 0, durationMinutes: 45, price: 21000, staffId: "s3", notes: "Color: INOA 7.5 roots only — clienta sensible al amoníaco" }],
+    arrival: "in_progress", arrivedAt: _hhmm(rt - 8),
+  });
+
+  // 3) IN-PROGRESS — Julieta Ramos: Mechas Platinum con Valentina Suárez (s2)
+  const jr = N - 30;
+  A.push({
+    id: "td_jr", service: "Mechas Platinum", category: "Coloración", date: T, time: _hhmm(jr),
+    name: "Julieta Ramos", phone: "1177889900", status: "Confirmado", price: 80000, totalDuration: 150,
+    items: [{ serviceName: "Mechas Platinum", role: "colorist", startMinutes: 0, durationMinutes: 30, price: 80000, staffId: "s2", notes: "Retoque mechas con papel" }],
+    arrival: "in_progress", arrivedAt: _hhmm(jr - 10),
+  });
+
+  // 4) WAITING (arrived) — Antonella López: Brushing con Camila (s4) en 10'
+  const al = N + 10;
+  A.push({
+    id: "td_al", service: "Brushing Premium", category: "Peinados", date: T, time: _hhmm(al),
+    name: "Antonella López", phone: "1133221199", status: "Confirmado", price: 19500, totalDuration: 40,
+    items: [{ serviceName: "Brushing Premium", role: "stylist", startMinutes: 0, durationMinutes: 40, price: 19500, staffId: "s4" }],
+    arrival: "arrived", arrivedAt: _hhmm(N - 2),
+  });
+
+  // 5) WAITING (arrived) — Paula Giménez: Semipermanente con Sofía (s5) en 20'
+  const pg = N + 20;
+  A.push({
+    id: "td_pg", service: "Semipermanente OPI", category: "Manos y pies", date: T, time: _hhmm(pg),
+    name: "Paula Giménez", phone: "1188776655", status: "Confirmado", price: 21000, totalDuration: 50,
+    items: [{ serviceName: "Semipermanente OPI", role: "nail", startMinutes: 0, durationMinutes: 50, price: 21000, staffId: "s5", notes: "Rojo clásico" }],
+    arrival: "arrived", arrivedAt: _hhmm(N - 1),
+  });
+
+  // 6) NO-SHOW — Luciana Pérez 10:00 con Camila (s4)
+  A.push({
+    id: "td_lp", service: "Corte Damas", category: "Cortes", date: T, time: "10:00",
+    name: "Luciana Pérez", phone: "1199887766", status: "Confirmado", price: 21000, totalDuration: 45,
+    items: [{ serviceName: "Corte Damas", role: "stylist", startMinutes: 0, durationMinutes: 45, price: 21000, staffId: "s4" }],
+    arrival: "pending",
+  });
+
+  // 7) UPCOMING — Florencia Martínez en 45' con Camila (s4)
+  const fm = N + 45;
+  A.push({
+    id: "td_fm", service: "Brushing Premium", category: "Peinados", date: T, time: _hhmm(fm),
+    name: "Florencia Martínez", phone: "1155443322", status: "Confirmado", price: 19500, totalDuration: 40,
+    items: [{ serviceName: "Brushing Premium", role: "stylist", startMinutes: 0, durationMinutes: 40, price: 19500, staffId: "s4" }],
+    arrival: "pending",
+  });
+
+  // 8) UPCOMING — Bruno Díaz en 60' con Martín (s3)
+  const bd = N + 60;
+  A.push({
+    id: "td_bd", service: "Corte Caballeros", category: "Cortes", date: T, time: _hhmm(bd),
+    name: "Bruno Díaz", phone: "1144332211", status: "Confirmado", price: 15000, totalDuration: 30,
+    items: [{ serviceName: "Corte Caballeros", role: "stylist", startMinutes: 0, durationMinutes: 30, price: 15000, staffId: "s3" }],
+    arrival: "pending",
+  });
+
+  // 9) WALK-IN — Lorena Suárez recién agregada con Brenda (s6)
+  A.push({
+    id: "td_ls", service: "Lavado Loreal / Wella SP", category: "Lavados y tratamientos", date: T, time: _hhmm(N),
+    name: "Lorena Suárez", phone: "1100990011", status: "Confirmado", price: 6000, totalDuration: 20,
+    items: [{ serviceName: "Lavado Loreal / Wella SP", role: "stylist", startMinutes: 0, durationMinutes: 20, price: 6000, staffId: "s6" }],
+    arrival: "arrived", arrivedAt: _hhmm(N), walkIn: true,
+  });
+
+  // 10) CANCELLED — Mariana Olivera (libera turno en timeline)
+  A.push({
+    id: "td_can", service: "Ondas", category: "Peinados", date: T, time: "13:00",
+    name: "Mariana Olivera", phone: "1100112233", status: "Cancelado", price: 24000, totalDuration: 50,
+    items: [{ serviceName: "Ondas", role: "stylist", startMinutes: 0, durationMinutes: 50, price: 24000, staffId: "s4" }],
+  });
+
+  // 11) CANCELLED — Sandra Quiroga (turno liberado de Lucía s1, su tercer slot)
+  A.push({
+    id: "td_can2", service: "Color completo", category: "Coloración", date: T, time: "15:30",
+    name: "Sandra Quiroga", phone: "1133445566", status: "Cancelado", price: 42500, totalDuration: 90,
+    items: [{ serviceName: "Color completo", role: "colorist", startMinutes: 0, durationMinutes: 30, price: 42500, staffId: "s1" }],
+  });
+
+  // 12) COMPLETED — Camila Rodríguez (visita finalizada hoy)
+  const cr = Math.max(9 * 60, N - 180);
+  A.push({
+    id: "td_cr", service: "Color Inoa + Ritual Morena", category: "Coloración", date: T, time: _hhmm(cr),
+    name: "Camila Rodríguez", phone: "1166889977", status: "Completado", price: 53000 + 38500, totalDuration: 150,
+    items: [
+      { serviceName: "Color Inoa", role: "colorist", startMinutes: 0, durationMinutes: 30, price: 53000, staffId: "s1", completed: true },
+      { serviceName: "Ritual Morena (con peinado)", role: "stylist", startMinutes: 90, durationMinutes: 60, price: 38500, staffId: "s3", completed: true },
+    ],
+    productsUsed: ["L'Oréal INOA 7.5", "Kérastase Rituel Therapiste"],
+    arrival: "done",
+  });
+
+  // Historial del cliente logueado (para puntos de fidelidad — 4/5)
+  A.push({ id: "h1", service: "Ritual Morena (con peinado)", category: "Lavados y tratamientos", date: "2026-04-15", time: "11:00", name: "Valentina García", phone: "1144556677", status: "Completado", price: 38500, productsUsed: ["Kérastase Rituel Therapiste", "Kérastase Elixir Ultime"] });
+  A.push({ id: "h2", service: "Color Inoa", category: "Coloración", date: "2026-05-20", time: "14:30", name: "Valentina García", phone: "1144556677", status: "Completado", price: 53000, productsUsed: ["L'Oréal INOA 7.5"] });
+  A.push({ id: "h3", service: "Semipermanente OPI", category: "Manos y pies", date: "2026-03-02", time: "16:00", name: "Valentina García", phone: "1144556677", status: "Completado", price: 21000 });
+  A.push({ id: "h4", service: "Brushing Premium", category: "Peinados", date: "2026-06-01", time: "10:00", name: "Valentina García", phone: "1144556677", status: "Completado", price: 19500 });
+
+  return A;
+}
+
+const SEED_APPTS: Appointment[] = buildTodaySeed();
 
 export const ADMIN_SEED_APPTS_TODAY = (): Appointment[] =>
   apptStore.list().filter((a) => a.date === todayStr() && a.status !== "Cancelado");
 
 const SEED_REVIEWS: Review[] = [
+  { id: "r0", name: "Camila Rodríguez", rating: 5, comment: "Salí feliz, el color quedó impecable. Lucía es una genia. ¡Y el Ritual Morena es un mimo!", service: "Color Inoa + Ritual Morena", date: todayStr() },
   { id: "r1", name: "Sofía Martínez", rating: 5, comment: "Hermoso lugar y trato increíble. Salí feliz con mi color.", service: "Color Inoa", date: "2026-04-12" },
   { id: "r2", name: "Lucía Paredes", rating: 5, comment: "El Ritual Morena es una experiencia única.", service: "Ritual Morena (con peinado)", date: "2026-03-28" },
   { id: "r3", name: "Camila Romero", rating: 4, comment: "Excelente atención. El brushing me encantó.", service: "Brushing Premium", date: "2026-03-10" },
   { id: "r4", name: "Florencia Aguirre", rating: 5, comment: "Profesionalismo y calidez. Ya soy clienta fija.", service: "Mechas Platinum", date: "2026-02-22" },
   { id: "r5", name: "Valentina González", rating: 5, comment: "Las chicas son divinas y el lugar es precioso.", service: "Semipermanente OPI", date: "2026-05-18" },
+];
+
+const SEED_NOTIFS: Notification[] = [
+  { id: "n_seed_s1", staffId: "s1", apptId: "td_va", message: "Tu clienta, Valentina García, ya llegó!", createdAt: Date.now() - 22 * 60 * 1000, read: false },
+  { id: "n_seed_s3", staffId: "s3", apptId: "td_rt", message: "Tu clienta, Renata Torres, ya llegó!", createdAt: Date.now() - 17 * 60 * 1000, read: false },
+  { id: "n_seed_s5", staffId: "s5", apptId: "td_va", message: "Manicuría asignada: Valentina García (durante procesado de color).", createdAt: Date.now() - 12 * 60 * 1000, read: false },
+  { id: "n_seed_s4", staffId: "s4", apptId: "td_can", message: "Turno cancelado: Mariana Olivera (13:00) — slot liberado.", createdAt: Date.now() - 40 * 60 * 1000, read: false },
 ];
 
 function read<T>(key: string, seed: T): T {
