@@ -727,7 +727,7 @@ export function getStaffAgenda(staffId: string, date: string) {
 
 // ------------ Notifications (in-app push) ------------
 export const notifStore = {
-  list: (): Notification[] => read<Notification[]>(NOTIF_KEY, []),
+  list: (): Notification[] => read<Notification[]>(NOTIF_KEY, SEED_NOTIFS),
   forStaff: (staffId: string): Notification[] =>
     notifStore.list().filter((n) => n.staffId === staffId).sort((a, b) => b.createdAt - a.createdAt),
   unreadForStaff: (staffId: string): Notification[] =>
