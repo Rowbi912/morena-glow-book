@@ -19,7 +19,7 @@ export const STAFF: Staff[] = [
   { id: "s3", name: "Martín Acosta", role: "stylist", specialty: "Estilista · Cortes y peinados", photo: avatar("Martín Acosta"), daysOff: [0], pin: "3333" },
   { id: "s4", name: "Camila Fernández", role: "stylist", specialty: "Estilista · Brushing y tratamientos", photo: avatar("Camila Fernández"), daysOff: [0], pin: "4444" },
   { id: "s5", name: "Sofía Giménez", role: "nail", specialty: "Manicurista · Semipermanente", photo: avatar("Sofía Giménez"), daysOff: [0], pin: "5555" },
-  { id: "s6", name: "Brenda Lara", role: "stylist", specialty: "Estilista · Color asistente", photo: avatar("Brenda Lara"), daysOff: [0, new Date().getDay() === 2 ? -1 : 2], pin: "6666" },
+  { id: "s6", name: "Brenda Lara", role: "stylist", specialty: "Estilista · Color asistente", photo: avatar("Brenda Lara"), daysOff: [0], pin: "6666" },
 ];
 
 export type Service = {
