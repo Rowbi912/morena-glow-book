@@ -16,6 +16,7 @@ import {
   hhmmToMin,
   addMinutes,
   formatPrice,
+  getNowMin,
   type Appointment,
   type ArrivalStatus,
   type Staff,
@@ -91,7 +92,7 @@ function ReceptionPage() {
 
 function ReceptionDashboard({ tick, onLogout, onRefresh }: { tick: number; onLogout: () => void; onRefresh: () => void }) {
   const today = new Date().toISOString().slice(0, 10);
-  const nowMin = (() => { const d = new Date(); return d.getHours() * 60 + d.getMinutes(); })();
+  const nowMin = getNowMin();
 
   const todays = useMemo(() => apptStore.list()
     .filter((a) => a.date === today && a.status !== "Cancelado")

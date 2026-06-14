@@ -228,23 +228,28 @@ function StaffRow({ staff, blocks, gaps, pct }: {
   gaps: { start: number; end: number }[];
   pct: (m: number) => string;
 }) {
+  // Overloaded = no idle gaps for the rest of the working day after current time
+  const overloaded = blocks.length >= 4 && gaps.length === 0;
   return (
     <div className="flex items-center gap-3">
       <div className="w-28 shrink-0 flex items-center gap-2">
         <img src={staff.photo} alt={staff.name} className="h-7 w-7 rounded-full ring-1 ring-border"/>
         <div className="min-w-0">
-          <div className="text-[11px] font-medium truncate">{staff.name.split(" ")[0]}</div>
+          <div className="text-[11px] font-medium truncate flex items-center gap-1">
+            {staff.name.split(" ")[0]}
+            {overloaded && <span className="text-[8px] uppercase tracking-wider text-rose-600 bg-rose-100 px-1 rounded">Full</span>}
+          </div>
           <div className="text-[9px] text-muted-foreground uppercase tracking-wider">{ROLE_LABEL[staff.role]}</div>
         </div>
       </div>
-      <div className="relative flex-1 h-10 rounded-xl bg-secondary/70 border border-border/60 overflow-hidden">
+      <div className={`relative flex-1 h-10 rounded-xl border overflow-hidden ${overloaded ? "bg-rose-50/60 border-rose-300/40" : "bg-secondary/70 border-border/60"}`}>
         {gaps.map((g, i) => (
           <div key={"g" + i} className="absolute top-0 bottom-0 bg-amber-400/25 border-x border-amber-400/40"
             style={{ left: pct(g.start), width: `calc(${pct(g.end)} - ${pct(g.start)})` }}
             title={`Libre ${minToHHMM(g.start)}–${minToHHMM(g.end)}`} />
         ))}
         {blocks.map((b, i) => (
-          <div key={i} className="absolute top-1 bottom-1 bg-gold text-background rounded-md px-1.5 text-[9px] flex items-center overflow-hidden shadow-sm"
+          <div key={i} className={`absolute top-1 bottom-1 rounded-md px-1.5 text-[9px] flex items-center overflow-hidden shadow-sm ${overloaded ? "bg-rose-500 text-white" : "bg-gold text-background"}`}
             style={{ left: pct(b.start), width: `calc(${pct(b.end)} - ${pct(b.start)})` }}
             title={`${minToHHMM(b.start)}–${minToHHMM(b.end)} · ${b.client} · ${b.service}`}>
             <span className="truncate">{b.client.split(" ")[0]}</span>
