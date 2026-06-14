@@ -16,6 +16,7 @@ import {
   hhmmToMin,
   addMinutes,
   formatPrice,
+  getNowMin,
   type Appointment,
   type ArrivalStatus,
   type Staff,
