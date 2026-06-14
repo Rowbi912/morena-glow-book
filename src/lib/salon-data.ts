@@ -14,16 +14,16 @@ const avatar = (name: string) =>
   `https://ui-avatars.com/api/?name=${encodeURIComponent(name)}&background=C9A96E&color=FAF8F5&size=200&font-size=0.4&bold=true`;
 
 export const STAFF: Staff[] = [
-  { id: "s1", name: "Lucía Romero", role: "colorist", specialty: "Colorista master · Balayage", photo: avatar("Lucía Romero"), daysOff: [0], pin: "1111" },
-  { id: "s2", name: "Valentina Castro", role: "colorist", specialty: "Colorista · Color tendencia", photo: avatar("Valentina Castro"), daysOff: [0], pin: "2222" },
-  { id: "s3", name: "Romina Suárez", role: "colorist", specialty: "Colorista · Mechas platinum", photo: avatar("Romina Suárez"), daysOff: [0], pin: "3333" },
-  { id: "s4", name: "Martín Acosta", role: "stylist", specialty: "Estilista · Cortes y peinados", photo: avatar("Martín Acosta"), daysOff: [0], pin: "4444" },
-  { id: "s5", name: "Diego Núñez", role: "stylist", specialty: "Estilista · Cortes caballero", photo: avatar("Diego Núñez"), daysOff: [0], pin: "5555" },
-  { id: "s6", name: "Camila Fernández", role: "stylist", specialty: "Estilista · Brushing y tratamientos", photo: avatar("Camila Fernández"), daysOff: [0], pin: "6666" },
-  { id: "s7", name: "Sofía Giménez", role: "nail", specialty: "Manicurista · Semipermanente", photo: avatar("Sofía Giménez"), daysOff: [0], pin: "7777" },
-  { id: "s8", name: "Paola Méndez", role: "nail", specialty: "Manicurista · Nail art", photo: avatar("Paola Méndez"), daysOff: [0], pin: "8888" },
-  { id: "s9", name: "Julieta Aguirre", role: "nail", specialty: "Manicurista · Pedicuría spa", photo: avatar("Julieta Aguirre"), daysOff: [0], pin: "1212" },
-  { id: "s10", name: "Andrea Vega", role: "stylist", specialty: "Maquillaje y tratamientos", photo: avatar("Andrea Vega"), daysOff: [0], pin: "1010" },
+  { id: "s1", name: "Lucía Romero", role: "colorist", specialty: "Colorista master · Balayage", photo: avatar("Lucía Romero"), daysOff: [], pin: "1111" },
+  { id: "s2", name: "Valentina Castro", role: "colorist", specialty: "Colorista · Color tendencia", photo: avatar("Valentina Castro"), daysOff: [], pin: "2222" },
+  { id: "s3", name: "Romina Suárez", role: "colorist", specialty: "Colorista · Mechas platinum", photo: avatar("Romina Suárez"), daysOff: [], pin: "3333" },
+  { id: "s4", name: "Martín Acosta", role: "stylist", specialty: "Estilista · Cortes y peinados", photo: avatar("Martín Acosta"), daysOff: [], pin: "4444" },
+  { id: "s5", name: "Diego Núñez", role: "stylist", specialty: "Estilista · Cortes caballero", photo: avatar("Diego Núñez"), daysOff: [], pin: "5555" },
+  { id: "s6", name: "Camila Fernández", role: "stylist", specialty: "Estilista · Brushing y tratamientos", photo: avatar("Camila Fernández"), daysOff: [], pin: "6666" },
+  { id: "s7", name: "Sofía Giménez", role: "nail", specialty: "Manicurista · Semipermanente", photo: avatar("Sofía Giménez"), daysOff: [], pin: "7777" },
+  { id: "s8", name: "Paola Méndez", role: "nail", specialty: "Manicurista · Nail art", photo: avatar("Paola Méndez"), daysOff: [], pin: "8888" },
+  { id: "s9", name: "Julieta Aguirre", role: "nail", specialty: "Manicurista · Pedicuría spa", photo: avatar("Julieta Aguirre"), daysOff: [], pin: "1212" },
+  { id: "s10", name: "Andrea Vega", role: "stylist", specialty: "Maquillaje y tratamientos", photo: avatar("Andrea Vega"), daysOff: [], pin: "1010" },
 ];
 
 export type Service = {
