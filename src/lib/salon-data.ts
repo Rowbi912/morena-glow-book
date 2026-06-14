@@ -859,8 +859,7 @@ export function checkInClient(apptId: string): { ok: boolean; error?: string } {
   const list = apptStore.list();
   const appt = list.find((a) => a.id === apptId);
   if (!appt) return { ok: false, error: "Turno no encontrado" };
-  const now = new Date();
-  const hhmm = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`;
+  const hhmm = getNowHHMM();
   const next = list.map((a) =>
     a.id === apptId ? { ...a, arrival: "arrived" as ArrivalStatus, arrivedAt: hhmm } : a,
   );
