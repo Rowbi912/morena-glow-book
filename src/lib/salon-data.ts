@@ -914,14 +914,14 @@ export function createWalkIn(serviceName: string, clientName: string, phone: str
 
   const { items } = buildSchedule([svc]);
   const date = todayStr();
-  const now = new Date();
-  // Try current half-hour rounded up, then forward
+  const nowMin = getNowMin();
+  // Try the next half-hour boundary at or after simulated now, then forward.
   const startCandidates: string[] = [];
-  let h = now.getHours();
-  let m = now.getMinutes() < 30 ? 30 : 0;
-  if (m === 0) h += 1;
-  for (; h < 18; h++) {
-    for (const mm of (h === now.getHours() ? [m] : [0, 30])) {
+  let firstH = Math.floor(nowMin / 60);
+  let firstM = nowMin % 60 <= 30 ? 30 : 60;
+  if (firstM === 60) { firstH += 1; firstM = 0; }
+  for (let h = firstH; h < 18; h++) {
+    for (const mm of (h === firstH ? [firstM] : [0, 30])) {
       startCandidates.push(`${String(h).padStart(2, "0")}:${String(mm).padStart(2, "0")}`);
     }
   }
@@ -941,7 +941,7 @@ export function createWalkIn(serviceName: string, clientName: string, phone: str
         totalDuration: svc.duration,
         items: res.items,
         arrival: "arrived",
-        arrivedAt: `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}`,
+        arrivedAt: getNowHHMM(),
         walkIn: true,
       };
       apptStore.add(appt);
