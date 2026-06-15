@@ -177,9 +177,9 @@ export type UserAccount = {
   password: string;
 };
 
-const APPT_KEY = "morena_appointments_v6";
+const APPT_KEY = "morena_appointments_v7";
 const RECEPTION_KEY = "morena_reception_mode";
-const NOTIF_KEY = "morena_notifications_v3";
+const NOTIF_KEY = "morena_notifications_v4";
 const RECEPTION_PIN = "9999";
 
 const REVIEW_KEY = "morena_reviews_v2";
@@ -188,6 +188,10 @@ const SESSION_KEY = "morena_session_v2";
 const ADMIN_KEY = "morena_admin_mode";
 const STAFF_SESSION_KEY = "morena_staff_session_v2";
 const LEGACY_USER_KEY = "morena_user";
+const WAITLIST_KEY = "morena_waitlist_v1";
+const CLIENT_NOTIF_KEY = "morena_client_notifs_v1";
+const INVENTORY_KEY = "morena_inventory_v1";
+const SURVEY_KEY = "morena_surveys_v1";
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
