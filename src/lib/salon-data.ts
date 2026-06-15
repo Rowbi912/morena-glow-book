@@ -410,6 +410,10 @@ function buildTodaySeed(): Appointment[] {
   A.push({ id: "h3", service: "Semipermanente OPI", category: "Manos y pies", date: "2026-03-02", time: "16:00", name: "Valentina García", phone: "1144556677", status: "Completado", price: 21000 });
   A.push({ id: "h4", service: "Brushing Premium", category: "Peinados", date: "2026-06-01", time: "10:00", name: "Valentina García", phone: "1144556677", status: "Completado", price: 19500 });
 
+  // Historical no-shows for Luciana Pérez (today's ns02 is the 3rd).
+  A.push({ id: "ns_h1", service: "Color Inoa", category: "Coloración", date: "2026-05-22", time: "11:00", name: "Luciana Pérez", phone: "1199887766", status: "Confirmado", price: 53000, arrival: "pending" });
+  A.push({ id: "ns_h2", service: "Brushing Premium", category: "Peinados", date: "2026-06-03", time: "16:00", name: "Luciana Pérez", phone: "1199887766", status: "Confirmado", price: 19500, arrival: "pending" });
+
   return A;
 }
 
