@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { CalendarPlus, CalendarCheck, Star, Gift, Bell, ArrowRight, Sparkles, Wand2 } from "lucide-react";
 import { authStore, apptStore, reviewStore, getPointsInfo } from "@/lib/salon-data";
 import { AuthScreen } from "@/components/AuthScreen";
+import { ClientNotificationsBanner } from "@/components/ClientNotificationsBanner";
 import logo from "@/assets/logo.png";
 
 export const Route = createFileRoute("/")({
