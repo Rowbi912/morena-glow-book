@@ -466,3 +466,39 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
     </div>
   );
 }
+
+function WaitingListSection({ onRefresh }: { onRefresh: () => void }) {
+  const [list, setList] = useState<WaitlistEntry[]>([]);
+  useEffect(() => { setList(waitlistStore.list()); }, []);
+  if (list.length === 0) return null;
+  return (
+    <section className="px-5 mt-7">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Lista de espera</h2>
+        <span className="text-[10px] text-muted-foreground">{list.length} clientas</span>
+      </div>
+      <div className="space-y-2">
+        {list.map((w) => {
+          const staff = w.preferredStaffId ? STAFF.find((s) => s.id === w.preferredStaffId) : null;
+          return (
+            <div key={w.id} className="rounded-2xl bg-card border border-border/60 p-3 shadow-soft flex items-center justify-between">
+              <div className="min-w-0">
+                <div className="text-sm font-medium truncate">{w.name}</div>
+                <div className="text-[11px] text-muted-foreground truncate">
+                  {w.serviceName} {staff ? `· prefiere ${staff.name.split(" ")[0]}` : `· ${ROLE_LABEL[w.role]}`}
+                </div>
+              </div>
+              <button
+                onClick={() => { waitlistStore.remove(w.id); setList(waitlistStore.list()); onRefresh(); }}
+                className="text-[10px] uppercase tracking-wider text-muted-foreground hover:text-rose-600 px-2 py-1"
+              >Quitar</button>
+            </div>
+          );
+        })}
+      </div>
+      <p className="mt-3 text-[10px] text-muted-foreground text-center">
+        Cuando se cancela un turno compatible, se notifica automáticamente a la primera clienta de esta lista.
+      </p>
+    </section>
+  );
+}
