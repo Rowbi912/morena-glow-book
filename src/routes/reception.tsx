@@ -39,7 +39,6 @@ import {
   TrendingUp,
   Users,
   AlertCircle,
-  Package,
   AlertTriangle,
 
 } from "lucide-react";
