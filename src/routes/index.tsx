@@ -56,6 +56,8 @@ function Home() {
         </div>
       </section>
 
+      <ClientNotificationsBanner />
+
       <section className="px-5 mt-4">
         <div className="relative rounded-3xl overflow-hidden shadow-elegant aspect-[16/11]">
           <img
