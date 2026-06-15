@@ -174,6 +174,9 @@ function ReceptionDashboard({ tick, onLogout, onRefresh }: { tick: number; onLog
         )}
       </section>
 
+      {/* Waiting list */}
+      <WaitingListSection onRefresh={onRefresh} />
+
       {/* Occupancy timeline */}
       <section className="px-5 mt-7">
         <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground mb-3">Ocupación del salón</h2>
