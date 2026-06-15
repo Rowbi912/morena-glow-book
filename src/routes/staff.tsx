@@ -5,7 +5,7 @@ import {
   ROLE_LABEL,
   staffSession,
   getStaffAgenda,
-  setItemCompleted,
+  completeItemWithSideEffects,
   addMinutes,
   formatPrice,
   notifStore,

@@ -16,6 +16,7 @@ import { Route as ReceptionRouteImport } from './routes/reception'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as PointsRouteImport } from './routes/points'
 import { Route as LookRouteImport } from './routes/look'
+import { Route as InventoryRouteImport } from './routes/inventory'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as BookRouteImport } from './routes/book'
 import { Route as AppointmentsRouteImport } from './routes/appointments'
@@ -58,6 +59,11 @@ const LookRoute = LookRouteImport.update({
   path: '/look',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InventoryRoute = InventoryRouteImport.update({
+  id: '/inventory',
+  path: '/inventory',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ContactRoute = ContactRouteImport.update({
   id: '/contact',
   path: '/contact',
@@ -95,6 +101,7 @@ export interface FileRoutesByFullPath {
   '/appointments': typeof AppointmentsRoute
   '/book': typeof BookRoute
   '/contact': typeof ContactRoute
+  '/inventory': typeof InventoryRoute
   '/look': typeof LookRoute
   '/points': typeof PointsRoute
   '/profile': typeof ProfileRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/appointments': typeof AppointmentsRoute
   '/book': typeof BookRoute
   '/contact': typeof ContactRoute
+  '/inventory': typeof InventoryRoute
   '/look': typeof LookRoute
   '/points': typeof PointsRoute
   '/profile': typeof ProfileRoute
@@ -126,6 +134,7 @@ export interface FileRoutesById {
   '/appointments': typeof AppointmentsRoute
   '/book': typeof BookRoute
   '/contact': typeof ContactRoute
+  '/inventory': typeof InventoryRoute
   '/look': typeof LookRoute
   '/points': typeof PointsRoute
   '/profile': typeof ProfileRoute
@@ -143,6 +152,7 @@ export interface FileRouteTypes {
     | '/appointments'
     | '/book'
     | '/contact'
+    | '/inventory'
     | '/look'
     | '/points'
     | '/profile'
@@ -158,6 +168,7 @@ export interface FileRouteTypes {
     | '/appointments'
     | '/book'
     | '/contact'
+    | '/inventory'
     | '/look'
     | '/points'
     | '/profile'
@@ -173,6 +184,7 @@ export interface FileRouteTypes {
     | '/appointments'
     | '/book'
     | '/contact'
+    | '/inventory'
     | '/look'
     | '/points'
     | '/profile'
@@ -189,6 +201,7 @@ export interface RootRouteChildren {
   AppointmentsRoute: typeof AppointmentsRoute
   BookRoute: typeof BookRoute
   ContactRoute: typeof ContactRoute
+  InventoryRoute: typeof InventoryRoute
   LookRoute: typeof LookRoute
   PointsRoute: typeof PointsRoute
   ProfileRoute: typeof ProfileRoute
@@ -250,6 +263,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LookRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/inventory': {
+      id: '/inventory'
+      path: '/inventory'
+      fullPath: '/inventory'
+      preLoaderRoute: typeof InventoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/contact': {
       id: '/contact'
       path: '/contact'
@@ -301,6 +321,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppointmentsRoute: AppointmentsRoute,
   BookRoute: BookRoute,
   ContactRoute: ContactRoute,
+  InventoryRoute: InventoryRoute,
   LookRoute: LookRoute,
   PointsRoute: PointsRoute,
   ProfileRoute: ProfileRoute,
