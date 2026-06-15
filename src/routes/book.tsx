@@ -149,6 +149,18 @@ function BookPage() {
         </div>
       </div>
 
+      {name && getNoShowCountByName(name) >= 2 && step < 6 && (
+        <div className="px-5 mb-4">
+          <div className="rounded-2xl bg-rose-50 border border-rose-300 p-3 flex items-start gap-2 text-rose-700">
+            <AlertTriangle size={14} className="mt-0.5 shrink-0"/>
+            <p className="text-xs leading-snug">
+              Esta clienta tiene <strong>{getNoShowCountByName(name)} ausencias previas</strong>.
+              Considerá pedir confirmación 24 hs antes del turno.
+            </p>
+          </div>
+        </div>
+      )}
+
       <div className="px-5">
         {step > 1 && step < 6 && (
           <button onClick={() => setStep((s) => (s - 1) as Step)} className="inline-flex items-center text-sm text-muted-foreground mb-4 gap-1">
