@@ -130,9 +130,12 @@ function ReceptionDashboard({ tick, onLogout, onRefresh }: { tick: number; onLog
           <h1 className="font-serif text-3xl">Front desk</h1>
           <p className="text-[11px] text-muted-foreground mt-1">Actualizado en vivo</p>
         </div>
-        <button onClick={onLogout} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
-          <LogOut size={13}/> Salir
-        </button>
+        <div className="flex items-center gap-3">
+          <Link to="/inventory" className="inline-flex items-center gap-1 text-xs text-gold"><Package size={13}/> Inventario</Link>
+          <button onClick={onLogout} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
+            <LogOut size={13}/> Salir
+          </button>
+        </div>
       </div>
 
       {/* Summary */}
