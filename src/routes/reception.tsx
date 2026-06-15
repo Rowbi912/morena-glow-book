@@ -240,9 +240,25 @@ function QueueRow({ appt, onCheckIn, onStart, onDone, onCancel, onResched, onPro
             </span>
             {appt.walkIn && <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-foreground text-background">Walk-in</span>}
           </div>
-          <div className="text-sm font-medium mt-1.5 truncate">{appt.name}</div>
+          <div className="text-sm font-medium mt-1.5 truncate flex items-center gap-1.5">
+            {appt.name}
+            {(() => {
+              const ns = getNoShowCountByName(appt.name);
+              return ns >= 2 ? (
+                <span title={`${ns} no-shows previos · pedir confirmación`} className="inline-flex items-center gap-0.5 text-[9px] uppercase tracking-wider bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded-full">
+                  <AlertTriangle size={9}/> {ns} faltas
+                </span>
+              ) : null;
+            })()}
+          </div>
           <div className="text-[11px] text-muted-foreground mt-0.5 truncate">{appt.service}</div>
           {staff && <div className="text-[11px] text-muted-foreground mt-0.5">Con {staff}</div>}
+          {getNoShowCountByName(appt.name) >= 2 && (
+            <div className="mt-2 rounded-xl bg-rose-50 border border-rose-200 px-2.5 py-1.5 text-[10px] text-rose-700 flex items-start gap-1">
+              <AlertTriangle size={10} className="mt-0.5 shrink-0"/>
+              Esta clienta tiene 2+ ausencias. Sugerí confirmar 24 hs antes.
+            </div>
+          )}
         </div>
         <div className="text-right shrink-0">
           <div className="font-serif text-sm tabular-nums">{formatPrice(appt.price)}</div>
