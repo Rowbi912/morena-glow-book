@@ -17,9 +17,12 @@ import {
   addMinutes,
   formatPrice,
   getNowMin,
+  waitlistStore,
+  getNoShowCountByName,
   type Appointment,
   type ArrivalStatus,
   type Staff,
+  type WaitlistEntry,
 } from "@/lib/salon-data";
 import { SectionHeader } from "@/components/SectionHeader";
 import {
@@ -36,6 +39,8 @@ import {
   TrendingUp,
   Users,
   AlertCircle,
+  AlertTriangle,
+
 } from "lucide-react";
 
 export const Route = createFileRoute("/reception")({
@@ -125,9 +130,12 @@ function ReceptionDashboard({ tick, onLogout, onRefresh }: { tick: number; onLog
           <h1 className="font-serif text-3xl">Front desk</h1>
           <p className="text-[11px] text-muted-foreground mt-1">Actualizado en vivo</p>
         </div>
-        <button onClick={onLogout} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
-          <LogOut size={13}/> Salir
-        </button>
+        <div className="flex items-center gap-3">
+          <Link to="/inventory" className="inline-flex items-center gap-1 text-xs text-gold"><Package size={13}/> Inventario</Link>
+          <button onClick={onLogout} className="inline-flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground">
+            <LogOut size={13}/> Salir
+          </button>
+        </div>
       </div>
 
       {/* Summary */}
@@ -165,6 +173,9 @@ function ReceptionDashboard({ tick, onLogout, onRefresh }: { tick: number; onLog
           </div>
         )}
       </section>
+
+      {/* Waiting list */}
+      <WaitingListSection onRefresh={onRefresh} />
 
       {/* Occupancy timeline */}
       <section className="px-5 mt-7">
@@ -229,9 +240,25 @@ function QueueRow({ appt, onCheckIn, onStart, onDone, onCancel, onResched, onPro
             </span>
             {appt.walkIn && <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-foreground text-background">Walk-in</span>}
           </div>
-          <div className="text-sm font-medium mt-1.5 truncate">{appt.name}</div>
+          <div className="text-sm font-medium mt-1.5 truncate flex items-center gap-1.5">
+            {appt.name}
+            {(() => {
+              const ns = getNoShowCountByName(appt.name);
+              return ns >= 2 ? (
+                <span title={`${ns} no-shows previos · pedir confirmación`} className="inline-flex items-center gap-0.5 text-[9px] uppercase tracking-wider bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded-full">
+                  <AlertTriangle size={9}/> {ns} faltas
+                </span>
+              ) : null;
+            })()}
+          </div>
           <div className="text-[11px] text-muted-foreground mt-0.5 truncate">{appt.service}</div>
           {staff && <div className="text-[11px] text-muted-foreground mt-0.5">Con {staff}</div>}
+          {getNoShowCountByName(appt.name) >= 2 && (
+            <div className="mt-2 rounded-xl bg-rose-50 border border-rose-200 px-2.5 py-1.5 text-[10px] text-rose-700 flex items-start gap-1">
+              <AlertTriangle size={10} className="mt-0.5 shrink-0"/>
+              Esta clienta tiene 2+ ausencias. Sugerí confirmar 24 hs antes.
+            </div>
+          )}
         </div>
         <div className="text-right shrink-0">
           <div className="font-serif text-sm tabular-nums">{formatPrice(appt.price)}</div>
@@ -437,5 +464,41 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
         {children}
       </div>
     </div>
+  );
+}
+
+function WaitingListSection({ onRefresh }: { onRefresh: () => void }) {
+  const [list, setList] = useState<WaitlistEntry[]>([]);
+  useEffect(() => { setList(waitlistStore.list()); }, []);
+  if (list.length === 0) return null;
+  return (
+    <section className="px-5 mt-7">
+      <div className="flex items-center justify-between mb-3">
+        <h2 className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Lista de espera</h2>
+        <span className="text-[10px] text-muted-foreground">{list.length} clientas</span>
+      </div>
+      <div className="space-y-2">
+        {list.map((w) => {
+          const staff = w.preferredStaffId ? STAFF.find((s) => s.id === w.preferredStaffId) : null;
+          return (
+            <div key={w.id} className="rounded-2xl bg-card border border-border/60 p-3 shadow-soft flex items-center justify-between">
+              <div className="min-w-0">
+                <div className="text-sm font-medium truncate">{w.name}</div>
+                <div className="text-[11px] text-muted-foreground truncate">
+                  {w.serviceName} {staff ? `· prefiere ${staff.name.split(" ")[0]}` : `· ${ROLE_LABEL[w.role]}`}
+                </div>
+              </div>
+              <button
+                onClick={() => { waitlistStore.remove(w.id); setList(waitlistStore.list()); onRefresh(); }}
+                className="text-[10px] uppercase tracking-wider text-muted-foreground hover:text-rose-600 px-2 py-1"
+              >Quitar</button>
+            </div>
+          );
+        })}
+      </div>
+      <p className="mt-3 text-[10px] text-muted-foreground text-center">
+        Cuando se cancela un turno compatible, se notifica automáticamente a la primera clienta de esta lista.
+      </p>
+    </section>
   );
 }

@@ -177,9 +177,9 @@ export type UserAccount = {
   password: string;
 };
 
-const APPT_KEY = "morena_appointments_v6";
+const APPT_KEY = "morena_appointments_v7";
 const RECEPTION_KEY = "morena_reception_mode";
-const NOTIF_KEY = "morena_notifications_v3";
+const NOTIF_KEY = "morena_notifications_v4";
 const RECEPTION_PIN = "9999";
 
 const REVIEW_KEY = "morena_reviews_v2";
@@ -188,6 +188,10 @@ const SESSION_KEY = "morena_session_v2";
 const ADMIN_KEY = "morena_admin_mode";
 const STAFF_SESSION_KEY = "morena_staff_session_v2";
 const LEGACY_USER_KEY = "morena_user";
+const WAITLIST_KEY = "morena_waitlist_v1";
+const CLIENT_NOTIF_KEY = "morena_client_notifs_v1";
+const INVENTORY_KEY = "morena_inventory_v1";
+const SURVEY_KEY = "morena_surveys_v1";
 
 const todayStr = () => new Date().toISOString().slice(0, 10);
 
@@ -405,6 +409,10 @@ function buildTodaySeed(): Appointment[] {
   A.push({ id: "h2", service: "Color Inoa", category: "Coloración", date: "2026-05-20", time: "14:30", name: "Valentina García", phone: "1144556677", status: "Completado", price: 53000, productsUsed: ["L'Oréal INOA 7.5"] });
   A.push({ id: "h3", service: "Semipermanente OPI", category: "Manos y pies", date: "2026-03-02", time: "16:00", name: "Valentina García", phone: "1144556677", status: "Completado", price: 21000 });
   A.push({ id: "h4", service: "Brushing Premium", category: "Peinados", date: "2026-06-01", time: "10:00", name: "Valentina García", phone: "1144556677", status: "Completado", price: 19500 });
+
+  // Historical no-shows for Luciana Pérez (today's ns02 is the 3rd).
+  A.push({ id: "ns_h1", service: "Color Inoa", category: "Coloración", date: "2026-05-22", time: "11:00", name: "Luciana Pérez", phone: "1199887766", status: "Confirmado", price: 53000, arrival: "pending" });
+  A.push({ id: "ns_h2", service: "Brushing Premium", category: "Peinados", date: "2026-06-03", time: "16:00", name: "Luciana Pérez", phone: "1199887766", status: "Confirmado", price: 19500, arrival: "pending" });
 
   return A;
 }
@@ -956,4 +964,210 @@ export function createWalkIn(serviceName: string, clientName: string, phone: str
     }
   }
   return { ok: false, error: "No hay profesionales disponibles para hoy" };
+}
+
+// ============================================================
+// 1) Waiting list
+// ============================================================
+export type WaitlistEntry = {
+  id: string;
+  name: string;
+  phone: string;
+  serviceName: string;
+  role: Role;
+  preferredStaffId?: string;
+  addedAt: number;
+};
+
+const SEED_WAITLIST: WaitlistEntry[] = [
+  { id: "wl1", name: "Florencia Bianchi", phone: "1144778899", serviceName: "Color Inoa", role: "colorist", preferredStaffId: "s1", addedAt: SIM_EPOCH - 3 * 60 * 60 * 1000 },
+  { id: "wl2", name: "Micaela Sosa", phone: "1144778800", serviceName: "Brushing Premium", role: "stylist", addedAt: SIM_EPOCH - 90 * 60 * 1000 },
+  { id: "wl3", name: "Agustina Ferrari", phone: "1144778811", serviceName: "Semipermanente OPI", role: "nail", preferredStaffId: "s7", addedAt: SIM_EPOCH - 45 * 60 * 1000 },
+];
+
+export const waitlistStore = {
+  list: (): WaitlistEntry[] => read<WaitlistEntry[]>(WAITLIST_KEY, SEED_WAITLIST),
+  add: (e: Omit<WaitlistEntry, "id" | "addedAt">) => {
+    const item: WaitlistEntry = { ...e, id: "wl" + Date.now(), addedAt: Date.now() };
+    write(WAITLIST_KEY, [item, ...waitlistStore.list()]);
+    return item;
+  },
+  remove: (id: string) => {
+    write(WAITLIST_KEY, waitlistStore.list().filter((x) => x.id !== id));
+  },
+};
+
+// ============================================================
+// 2) Client notifications (waitlist offers, post-service survey)
+// ============================================================
+export type ClientNotifKind = "waitlist_offer" | "survey";
+export type ClientNotification = {
+  id: string;
+  phone: string;
+  kind: ClientNotifKind;
+  title: string;
+  message: string;
+  createdAt: number;
+  read?: boolean;
+  meta?: Record<string, any>;
+};
+
+export const clientNotifStore = {
+  list: (): ClientNotification[] => read<ClientNotification[]>(CLIENT_NOTIF_KEY, []),
+  forPhone: (phone: string) =>
+    clientNotifStore.list().filter((n) => n.phone === phone).sort((a, b) => b.createdAt - a.createdAt),
+  unreadForPhone: (phone: string) =>
+    clientNotifStore.forPhone(phone).filter((n) => !n.read),
+  push: (n: Omit<ClientNotification, "id" | "createdAt" | "read">) => {
+    const item: ClientNotification = { ...n, id: "cn" + Date.now() + Math.random().toString(36).slice(2, 5), createdAt: Date.now(), read: false };
+    write(CLIENT_NOTIF_KEY, [item, ...clientNotifStore.list()]);
+    return item;
+  },
+  markRead: (id: string) => {
+    write(CLIENT_NOTIF_KEY, clientNotifStore.list().map((n) => (n.id === id ? { ...n, read: true } : n)));
+  },
+  remove: (id: string) => {
+    write(CLIENT_NOTIF_KEY, clientNotifStore.list().filter((n) => n.id !== id));
+  },
+};
+
+// ============================================================
+// 3) No-show pattern detection
+// ============================================================
+export function getNoShowCountByName(name: string): number {
+  const norm = name.trim().toLowerCase();
+  return apptStore.list().filter((a) => {
+    if (a.name.trim().toLowerCase() !== norm) return false;
+    if (a.status === "Cancelado" || a.status === "Completado") return false;
+    // Past appointment that was never marked arrived
+    const past = a.date < todayStr() || (a.date === todayStr() && hhmmToMin(a.time) < getNowMin() - 30);
+    return past && (a.arrival ?? "pending") === "pending";
+  }).length;
+}
+
+// ============================================================
+// 4) Inventory (simulated Matisse integration)
+// ============================================================
+export type Product = {
+  id: string;
+  name: string;
+  brand: string;
+  stock: number;
+  minStock: number;
+  unit: string;
+};
+
+const SEED_INVENTORY: Product[] = [
+  { id: "p_inoa75", name: "INOA 7.5", brand: "L'Oréal Professionnel", stock: 4, minStock: 3, unit: "tubo" },
+  { id: "p_inoa80", name: "INOA 8.0", brand: "L'Oréal Professionnel", stock: 0, minStock: 3, unit: "tubo" },
+  { id: "p_inoa60", name: "INOA 6.0", brand: "L'Oréal Professionnel", stock: 5, minStock: 3, unit: "tubo" },
+  { id: "p_kerastase", name: "Rituel Therapiste", brand: "Kérastase", stock: 2, minStock: 3, unit: "frasco" },
+  { id: "p_absolut", name: "Absolut Repair", brand: "L'Oréal Professionnel", stock: 6, minStock: 3, unit: "frasco" },
+  { id: "p_opibubble", name: "OPI Bubble Bath", brand: "OPI", stock: 6, minStock: 3, unit: "esmalte" },
+  { id: "p_opiclassic", name: "OPI Big Apple Red", brand: "OPI", stock: 4, minStock: 3, unit: "esmalte" },
+  { id: "p_oxidante", name: "Oxidante 20 vol.", brand: "L'Oréal Professionnel", stock: 8, minStock: 4, unit: "litro" },
+];
+
+// Map service names to product deductions (1 unit each)
+const SERVICE_PRODUCT_USAGE: Record<string, string[]> = {
+  "Color completo": ["p_inoa75", "p_oxidante"],
+  "Color Inoa": ["p_inoa75", "p_oxidante"],
+  "Reflejos con papel": ["p_inoa80", "p_oxidante"],
+  "Mechas Platinum": ["p_inoa80", "p_oxidante"],
+  "Ritual Morena (con peinado)": ["p_kerastase"],
+  "Baño de crema Kerastase": ["p_kerastase"],
+  "Botox Capilar": ["p_absolut"],
+  "Morena Keratin Shock": ["p_absolut"],
+  "Semipermanente OPI": ["p_opibubble"],
+  "Manicuría": ["p_opiclassic"],
+};
+
+export const inventoryStore = {
+  list: (): Product[] => read<Product[]>(INVENTORY_KEY, SEED_INVENTORY),
+  update: (id: string, patch: Partial<Product>) => {
+    write(INVENTORY_KEY, inventoryStore.list().map((p) => (p.id === id ? { ...p, ...patch } : p)));
+  },
+  reorder: (id: string, qty = 6) => {
+    inventoryStore.update(id, { stock: (inventoryStore.list().find((p) => p.id === id)?.stock ?? 0) + qty });
+  },
+  deductForService: (serviceName: string) => {
+    const ids = SERVICE_PRODUCT_USAGE[serviceName];
+    if (!ids?.length) return;
+    const list = inventoryStore.list().map((p) =>
+      ids.includes(p.id) ? { ...p, stock: Math.max(0, p.stock - 1) } : p,
+    );
+    write(INVENTORY_KEY, list);
+  },
+  productsForService: (serviceName: string): Product[] => {
+    const ids = SERVICE_PRODUCT_USAGE[serviceName] ?? [];
+    return inventoryStore.list().filter((p) => ids.includes(p.id));
+  },
+};
+
+// ============================================================
+// 5) Post-service survey tracking (avoid duplicate prompts)
+// ============================================================
+export const surveyStore = {
+  list: (): string[] => read<string[]>(SURVEY_KEY, []),
+  markSubmitted: (key: string) => {
+    const list = surveyStore.list();
+    if (list.includes(key)) return;
+    write(SURVEY_KEY, [...list, key]);
+  },
+  hasSubmitted: (key: string) => surveyStore.list().includes(key),
+};
+
+// ============================================================
+// 6) Cancellation → waitlist matching
+// ============================================================
+export function notifyWaitlistForCancellation(appt: Appointment): WaitlistEntry[] {
+  const list = waitlistStore.list();
+  const roles = new Set((appt.items ?? []).map((i) => i.role));
+  const staffIds = new Set((appt.items ?? []).map((i) => i.staffId).filter(Boolean) as string[]);
+  const matches = list.filter((w) => roles.has(w.role) || (w.preferredStaffId && staffIds.has(w.preferredStaffId)));
+  for (const m of matches) {
+    const staff = m.preferredStaffId ? STAFF.find((s) => s.id === m.preferredStaffId)?.name.split(" ")[0] : "el equipo";
+    clientNotifStore.push({
+      phone: m.phone,
+      kind: "waitlist_offer",
+      title: "Se liberó un turno",
+      message: `Hay un lugar con ${staff} a las ${appt.time} para ${m.serviceName}. Tocá para confirmar.`,
+      meta: { waitlistId: m.id, time: appt.time, serviceName: m.serviceName },
+    });
+  }
+  return matches;
+}
+
+// Wrap cancel to also notify waitlist
+const _origCancel = apptStore.cancel;
+apptStore.cancel = (id: string) => {
+  const appt = apptStore.list().find((a) => a.id === id);
+  const next = _origCancel(id);
+  if (appt) notifyWaitlistForCancellation(appt);
+  return next;
+};
+
+// Wrap setItemCompleted to deduct inventory + trigger client survey
+const _origSetItemCompleted = setItemCompleted;
+export function completeItemWithSideEffects(apptId: string, itemIndex: number, completed: boolean) {
+  const before = apptStore.list().find((a) => a.id === apptId);
+  const wasCompleted = before?.items?.[itemIndex]?.completed === true;
+  _origSetItemCompleted(apptId, itemIndex, completed);
+  if (!completed || wasCompleted || !before) return;
+  const item = before.items?.[itemIndex];
+  if (!item) return;
+  // Deduct inventory
+  inventoryStore.deductForService(item.serviceName);
+  // Survey prompt to client
+  const staff = STAFF.find((s) => s.id === item.staffId);
+  const key = `${apptId}:${itemIndex}`;
+  if (!surveyStore.hasSubmitted(key)) {
+    clientNotifStore.push({
+      phone: before.phone,
+      kind: "survey",
+      title: "¿Cómo fue tu experiencia?",
+      message: `Dejá tu calificación para ${staff?.name.split(" ")[0] ?? "tu profesional"} (${item.serviceName}).`,
+      meta: { apptId, itemIndex, staffId: item.staffId, serviceName: item.serviceName, staffName: staff?.name },
+    });
+  }
 }

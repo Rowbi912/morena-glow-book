@@ -5,7 +5,7 @@ import {
   ROLE_LABEL,
   staffSession,
   getStaffAgenda,
-  setItemCompleted,
+  completeItemWithSideEffects,
   addMinutes,
   formatPrice,
   notifStore,
@@ -165,7 +165,7 @@ function StaffAgenda({ me, onLogout, tick, onChange }: { me: Staff; onLogout: ()
                       )}
                     </div>
                     <button
-                      onClick={() => { setItemCompleted(appt.id, index, !item.completed); onChange(); }}
+                      onClick={() => { completeItemWithSideEffects(appt.id, index, !item.completed); onChange(); }}
                       className={`h-9 w-9 rounded-full flex items-center justify-center border transition shrink-0 ${
                         item.completed
                           ? "bg-gold border-gold text-background"
