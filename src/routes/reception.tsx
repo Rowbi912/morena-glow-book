@@ -39,6 +39,9 @@ import {
   TrendingUp,
   Users,
   AlertCircle,
+  Package,
+  AlertTriangle,
+
 } from "lucide-react";
 
 export const Route = createFileRoute("/reception")({
