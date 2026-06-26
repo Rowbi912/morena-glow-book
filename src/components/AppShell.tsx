@@ -1,6 +1,7 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { Home, Scissors, CalendarPlus, CalendarCheck, Gift, Phone, User as UserIcon } from "lucide-react";
 import logo from "@/assets/logo.png";
+import { RoleSwitcher } from "@/components/RoleSwitcher";
 
 const NAV = [
   { to: "/", label: "Inicio", icon: Home },
