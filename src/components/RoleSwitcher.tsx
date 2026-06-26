@@ -23,21 +23,6 @@ export function RoleSwitcher() {
     ? "owner"
     : "client";
 
-  function pick(role: RoleKey, to: string) {
-    if (typeof window !== "undefined") {
-      if (role === "owner") adminStore.set(true);
-      if (role === "reception") localStorage.setItem("morena_reception_on", "1");
-      if (role === "staff") {
-        // auto-login as the first staff member for the demo
-        const s = STAFF[0];
-        if (s) localStorage.setItem("morena_staff_session", s.id);
-      }
-    }
-    navigate({ to });
-  }
-
-  // Side-effect: ensure the receptionSession key matches the actual key used internally.
-  // (receptionSession.login sets the canonical key; we mirror via its API for safety.)
   function activate(role: RoleKey, to: string) {
     if (role === "reception") receptionSession.login("9999");
     if (role === "owner") adminStore.set(true);
