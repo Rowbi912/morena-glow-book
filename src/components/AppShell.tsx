@@ -39,6 +39,8 @@ export function AppShell() {
         <Outlet />
       </main>
 
+      <RoleSwitcher />
+
       <nav className="fixed bottom-0 inset-x-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur">
         <div className="mx-auto max-w-2xl grid grid-cols-6">
           {NAV.map(({ to, label, icon: Icon }) => {
