@@ -1,6 +1,7 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { Home, Scissors, CalendarPlus, CalendarCheck, Gift, Phone, User as UserIcon } from "lucide-react";
 import logo from "@/assets/logo.png";
+import { RoleSwitcher } from "@/components/RoleSwitcher";
 
 const NAV = [
   { to: "/", label: "Inicio", icon: Home },
@@ -37,6 +38,8 @@ export function AppShell() {
       <main key={location.pathname} className="flex-1 page-fade pb-24">
         <Outlet />
       </main>
+
+      <RoleSwitcher />
 
       <nav className="fixed bottom-0 inset-x-0 z-40 border-t border-border/60 bg-background/95 backdrop-blur">
         <div className="mx-auto max-w-2xl grid grid-cols-6">
